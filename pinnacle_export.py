@@ -7,7 +7,7 @@ Use Pinnacle Cart API to export product catalog for consumption by Magento.
 
 from ConfigParser import ConfigParser, Error
 import logging
-from optparse import OptionParser
+import argparse
 import sys
 import requests
 import csv
@@ -24,12 +24,22 @@ Config = ConfigParser()
 
 
 def main():
-    parser = OptionParser()
-    parser.add_option('-l', '--logging-level', help='Logging level')
-    parser.add_option('-f', '--logging-file', help='Logging file name')
-    (options, args) = parser.parse_args()
-    logging_level = LOGGING_LEVELS.get(options.logging_level, logging.NOTSET)
-    logging.basicConfig(level=logging_level, filename=options.logging_file,
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        '-l',
+        type=str,
+        default='info',
+        help="logging level. Default is info. Use debug if you have problems."
+    )
+    parser.add_argument(
+        '-f',
+        type=str,
+        default='pinnacle_export.log',
+        help='logging file. Default is pinnacle_export.log.'
+    )
+    args = parser.parse_args()
+    logging_level = LOGGING_LEVELS.get(args.l, logging.NOTSET)
+    logging.basicConfig(level=logging_level, filename=args.f,
                         format='%(asctime)s %(levelname)s: %(message)s',
                         datefmt='%Y-%m-%d %H:%M:%S')
 

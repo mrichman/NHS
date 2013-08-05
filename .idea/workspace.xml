@@ -2,16 +2,13 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="7500d8dc-5480-4a29-a770-fdc806b44c81" name="Default" comment="">
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/.idea/codeStyleSettings.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/PRODUCT-IMPORT.csv" afterPath="$PROJECT_DIR$/PRODUCT-IMPORT.csv" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/misc.xml" afterPath="$PROJECT_DIR$/.idea/misc.xml" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/pinnacle_export.py" afterPath="$PROJECT_DIR$/pinnacle_export.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
     </list>
     <ignored path="NHS.iws" />
     <ignored path=".idea/workspace.xml" />
     <file path="/Dummy.txt" changelist="7500d8dc-5480-4a29-a770-fdc806b44c81" time="1375723227446" ignored="false" />
     <file path="/a.py" changelist="7500d8dc-5480-4a29-a770-fdc806b44c81" time="1375728203131" ignored="false" />
+    <file path="/pinnacle_export.py" changelist="7500d8dc-5480-4a29-a770-fdc806b44c81" time="1375729466682" ignored="false" />
     <option name="TRACKING_ENABLED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -52,8 +49,10 @@
       <file leaf-file-name="pinnacle_export.py" pinned="false" current="true" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/pinnacle_export.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="8" column="14" selection-start="191" selection-end="191" vertical-scroll-proportion="0.2580645">
-              <folding />
+            <state line="54" column="56" selection-start="1487" selection-end="1487" vertical-scroll-proportion="-1.8611112">
+              <folding>
+                <element signature="e#132#176#0" expanded="true" />
+              </folding>
             </state>
           </provider>
         </entry>
@@ -81,10 +80,10 @@
     </option>
   </component>
   <component name="ProjectFrameBounds">
-    <option name="x" value="215" />
-    <option name="y" value="34" />
-    <option name="width" value="1104" />
-    <option name="height" value="813" />
+    <option name="x" value="3" />
+    <option name="y" value="29" />
+    <option name="width" value="706" />
+    <option name="height" value="852" />
   </component>
   <component name="ProjectLevelVcsManager" settingsEditedManually="false">
     <OptionsSetting value="true" id="Add" />
@@ -241,15 +240,15 @@
     <servers />
   </component>
   <component name="ToolWindowManager">
-    <frame x="215" y="34" width="1104" height="813" extended-state="0" />
+    <frame x="3" y="29" width="706" height="852" extended-state="0" />
     <editor active="true" />
     <layout>
       <window_info id="Changes" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
       <window_info id="Database" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
-      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.19187145" sideWeight="0.60027856" order="0" side_tool="false" content_ui="combo" />
-      <window_info id="Debug" active="true" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.39972144" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
+      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.1994106" sideWeight="0.61268556" order="0" side_tool="false" content_ui="combo" />
+      <window_info id="Debug" active="true" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.38689741" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="2" side_tool="true" content_ui="tabs" />
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="7" side_tool="true" content_ui="tabs" />
       <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
@@ -321,7 +320,9 @@
     <option name="FILE_HISTORY_SPLITTER_PROPORTION" value="0.6" />
   </component>
   <component name="XDebuggerManager">
-    <breakpoint-manager />
+    <breakpoint-manager>
+      <option name="time" value="1" />
+    </breakpoint-manager>
   </component>
   <component name="editorHistoryManager">
     <entry file="file://$PROJECT_DIR$/PRODUCT-IMPORT.csv">
@@ -353,8 +354,10 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/pinnacle_export.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="8" column="14" selection-start="191" selection-end="191" vertical-scroll-proportion="0.2580645">
-          <folding />
+        <state line="54" column="56" selection-start="1487" selection-end="1487" vertical-scroll-proportion="-1.8611112">
+          <folding>
+            <element signature="e#132#176#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
