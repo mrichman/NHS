@@ -90,11 +90,11 @@ def product_import_csv(data):
                 d["Product"]["Sku"],  # sku
                 d["Product"]["Title"].encode('utf8'),  # name
                 'simple',  # product.type
-                '',  # product.attribute_set
+                'Default',  # product.attribute_set
                 'No',  # product.has_options
                 'No',  # product.required_options
                 'Enabled',  # product.status
-                'Catalog,Search',  # product.visibility
+                'Catalog, Search',  # product.visibility
                 d["Product"]["Price"],  # product.price
                 # product.short_description
                 d["Product"]["Description"].replace('\r\n', '').encode(

@@ -36,3 +36,5 @@ nosetests.xml
 
 # Keep passwords secret
 config.ini
+*.log
+
