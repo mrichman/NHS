@@ -38,3 +38,5 @@ nosetests.xml
 config.ini
 *.log
 
+
+*.log
