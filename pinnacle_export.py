@@ -5,14 +5,17 @@
 Use Pinnacle Cart API to export product catalog for consumption by Magento.
 """
 
-from ConfigParser import ConfigParser, Error
-import logging
 import argparse
-import sys
-import requests
+from ConfigParser import ConfigParser, Error
 import csv
+import glob
+import logging
+import os
+import requests
+import sys
 import json
 from pymssql import connect, InterfaceError
+from xlsxwriter.workbook import Workbook
 
 LOGGING_LEVELS = {'critical': logging.CRITICAL,
                   'error': logging.ERROR,
@@ -69,6 +72,7 @@ def main():
     #print r.text
     j = json.loads(r.text, encoding='ascii')
     product_import_csv(j)
+    export_to_excel()
     sys.exit(0)
 
 
@@ -117,7 +121,20 @@ def product_import_csv(data):
 
 def get_category_path(category_name):
     # print category_name
-    pass
+    #return category_name
+    return ''
+
+
+def export_to_excel():
+    for csvfile in glob.glob(os.path.join('.', '*.csv')):
+        workbook = Workbook(csvfile.replace('.csv', '') + '.xlsx')
+        worksheet = workbook.add_worksheet()
+        with open(csvfile, 'rb') as f:
+            reader = csv.reader(f)
+            for r, row in enumerate(reader):
+                for c, col in enumerate(row):
+                    worksheet.write(r, c, unicode(col, "utf8"))
+        workbook.close()
 
 
 def get_stock_qty(sku):

@@ -1,4 +1,6 @@
 *.py[cod]
+*.swp
+~$*.*
 
 # C extensions
 *.so
@@ -33,8 +35,9 @@ nosetests.xml
 .mr.developer.cfg
 .project
 .pydevproject
-.idea/*
 
 # Keep passwords secret
 config.ini
 *.log
+
+.idea/workspace.xml
