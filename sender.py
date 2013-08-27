@@ -69,6 +69,16 @@ def main():
                         format='%(asctime)s %(levelname)s: %(message)s',
                         datefmt='%Y-%m-%d %H:%M:%S')
 
+    #TODO respect command line args for each email
+    test_email()
+    order_ack()
+    test_drift_trigger1()
+    ship_confirmation()
+    get_new_orders()
+
+
+def test_email():
+    """ Send test email """
     req = create_request()
 
     req.dyn = [
@@ -191,7 +201,3 @@ def get_new_orders():
 
 if __name__ == '__main__':
     main()
-    order_ack()
-    test_drift_trigger1()
-    ship_confirmation()
-    get_new_orders()
