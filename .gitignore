@@ -40,4 +40,6 @@ nosetests.xml
 config.ini
 *.log
 
+# PyCharm
 .idea/workspace.xml
+.idea/tasks.xml

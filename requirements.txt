@@ -1,3 +1,5 @@
 pymssql
 requests
 xlsxwriter
+suds
+

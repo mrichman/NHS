@@ -122,6 +122,22 @@ def product_import_csv(data):
 def get_category_path(category_name):
     # print category_name
     #return category_name
+    """
+    digestion
+    immunesystemers
+    sinuses
+    joints-muscles
+    blood-sugar
+    heart-health
+    memory-mood
+    teeth-oral-care
+    sleep
+    vision
+    men-s-health
+    women-s-health
+    energy
+    anti-aging
+    """
     return ''
 
 
