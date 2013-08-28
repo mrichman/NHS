@@ -20,9 +20,9 @@ to EmailVision:
 """
 
 import argparse
+import logging
 from ConfigParser import SafeConfigParser, Error
 from time import strftime
-import logging
 from pymssql import connect, InterfaceError
 from suds.client import Client
 
