@@ -3,6 +3,20 @@
 
 """
 EmailVision Transactional Email API Integration
+
+This application pulls the following data from MOM and sends via SOAP request
+to EmailVision:
+
+* Order Confirmation
+* Autoship Pre-Shipment Notice
+* Shipping Confirmation
+* Backorder Notice
+* Blog Subscription Success Email
+* Blog Unsubscribe Success Email
+* Customer Feedback survey
+* Shopping Cart Abandonment Email 20-minute delay
+* Shopping Cart Abandonment Email 24-hour delay
+
 """
 
 import argparse
