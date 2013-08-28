@@ -43,6 +43,10 @@ RANDOMTAGS = {"[EMV] Test": 'FA6100040001FF8C',
               "Trigger_OrderAckknowledge1": '9D1F8080000474AA',
               "TEST-Drift-Trigger1": '608D795E7C020060'}
 
+MAILINGS = ['order-conf', 'ship-conf', 'as-prenotice', 'backorder', 'blog-sub',
+            'blog-unsub', 'cust-survey', 'cart-abandon-20m',
+            'cart-abandon-24h', 'test-email']
+
 logging.basicConfig(level=logging.INFO)
 logging.getLogger('suds.client').setLevel(logging.DEBUG)
 
@@ -64,7 +68,7 @@ def send_object(request):
 
 def main():
     """ Main function """
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(description="EmailVision Sender")
     parser.add_argument(
         '-l',
         type=str,
@@ -73,22 +77,40 @@ def main():
     )
     parser.add_argument(
         '-f',
-        type=str,
         default='pinnacle_export.log',
         help='logging file. Default is pinnacle_export.log.'
     )
+    parser.add_argument(
+        '-m',
+        required=True,
+        help=(
+            'Mailing to invoke. One of order-conf, ship-conf, as-prenotice, '
+            'backorder, blog-sub, blog-unsub, cust-survey, cart-abandon-20m, '
+            'cart-abandon-24h')
+    )
     args = parser.parse_args()
+
+    if args.m not in MAILINGS:
+        print('Mailing must be one of %s' % MAILINGS)
+        exit(1)
+
     logging_level = LOGGING_LEVELS.get(args.l, logging.NOTSET)
     logging.basicConfig(level=logging_level, filename=args.f,
                         format='%(asctime)s %(levelname)s: %(message)s',
                         datefmt='%Y-%m-%d %H:%M:%S')
 
-    #TODO respect command line args for each email
-    test_email()
-    order_ack()
-    test_drift_trigger1()
-    ship_confirmation()
-    get_new_orders()
+    logging.info(args.m)
+
+    if args.m == 'order-conf':
+        order_ack()
+    elif args.m == 'test-email':
+        test_email()
+    elif args.m == 'ship-conf':
+        ship_confirmation()
+    elif args.m == 'as-prenotice':
+        pass
+    elif args.m == 'cart-abandon-20m':
+        cart_abandon()
 
 
 def test_email():
@@ -159,7 +181,7 @@ def order_ack():
     print(res)
 
 
-def test_drift_trigger1():
+def cart_abandon():
     """ Cart Abandonment Email """
     config = SafeConfigParser()
     config.read('config.ini')
