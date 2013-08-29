@@ -37,12 +37,16 @@ LOGGING_LEVELS = {'critical': logging.CRITICAL,
 TEMPLATES = {"[EMV] Test": 15367,
              "Trigger_OrderShipment1": 1532948,
              "Trigger_OrderAckknowledge1": 1532947,
-             "TEST-Drift-Trigger1": 1531070}
+             "TEST-Drift-Trigger1": 1531070,
+             "Autoship-Prenotice": 1536856,
+             "Backorder-Notice": 1536855}
 
 RANDOMTAGS = {"[EMV] Test": 'FA6100040001FF8C',
               "Trigger_OrderShipment1": '952110747E020009',
               "Trigger_OrderAckknowledge1": '9D1F8080000474AA',
-              "TEST-Drift-Trigger1": '608D795E7C020060'}
+              "TEST-Drift-Trigger1": '608D795E7C020060',
+              "Autoship-Prenotice": '76FC140010000D9E',
+              "Backorder-Notice": '1E78EC9828002001'}
 
 MAILINGS = ['order-conf', 'ship-conf', 'as-prenotice', 'backorder', 'blog-sub',
             'blog-unsub', 'cust-survey', 'cart-abandon-20m',
@@ -84,10 +88,7 @@ def main():
     parser.add_argument(
         '-m',
         required=True,
-        help=(
-            'Mailing to invoke. One of order-conf, ship-conf, as-prenotice, '
-            'backorder, blog-sub, blog-unsub, cust-survey, cart-abandon-20m, '
-            'cart-abandon-24h')
+        help=('Mailing to invoke. One of %s' % MAILINGS)
     )
     args = parser.parse_args()
 
@@ -109,9 +110,11 @@ def main():
     elif args.m == 'ship-conf':
         ship_confirmation()
     elif args.m == 'as-prenotice':
-        pass
+        autoship_prenotice()
     elif args.m == 'cart-abandon-20m':
         cart_abandon()
+    elif args.m == 'backorder':
+        backorder_notice()
 
 
 def test_email():
@@ -197,6 +200,56 @@ def cart_abandon():
     req.uidkey = 'email'
     res = send_object(req)
     logging.debug(res)
+
+
+def autoship_prenotice():
+    """ Autoship Prenotice Email """
+    orders = get_upcoming_autoship_orders()
+    config = SafeConfigParser()
+    config.read('config.ini')
+    key = config.get("emailvision", "as_prenotice_key")
+    req = create_request()
+    req.email = 'mark.richman@nutrihealth.com'
+    req.encrypt = key
+    req.notificationId = TEMPLATES["Autoship-Prenotice"]
+    req.random = RANDOMTAGS["Autoship-Prenotice"]
+    req.senddate = strftime("%Y-%m-%dT%H:%M:%S")  # '1980-01-01T00:00:00'
+    req.synchrotype = 'NOTHING'
+    req.uidkey = 'email'
+    res = send_object(req)
+    logging.debug(res)
+    record_sent_mail(req.email, req.notificationId, '')
+
+
+def backorder_notice():
+    """ Backorder Notice Email """
+    orders = get_backorders()
+    config = SafeConfigParser()
+    config.read('config.ini')
+    key = config.get("emailvision", "backorder_notice_key")
+    req = create_request()
+    req.email = 'mark.richman@nutrihealth.com'
+    req.encrypt = key
+    req.notificationId = TEMPLATES["Backorder-Notice"]
+    req.random = RANDOMTAGS["Backorder-Notice"]
+    req.senddate = strftime("%Y-%m-%dT%H:%M:%S")  # '1980-01-01T00:00:00'
+    req.synchrotype = 'NOTHING'
+    req.uidkey = 'email'
+    res = send_object(req)
+    logging.debug(res)
+    record_sent_mail(req.email, req.notificationId, '')
+
+
+def get_upcoming_autoship_orders():
+    """ Gets upcoming Autoship orders for prenotice email """
+    #TODO
+    pass
+
+
+def get_backorders():
+    """ Gets backorders for notice email """
+    #TODO
+    pass
 
 
 def get_new_orders():
