@@ -25,6 +25,7 @@ from ConfigParser import SafeConfigParser, Error
 from time import strftime
 from pymssql import connect, InterfaceError
 from suds.client import Client
+import sqlite3
 
 
 LOGGING_LEVELS = {'critical': logging.CRITICAL,
@@ -142,7 +143,8 @@ def test_email():
     req.synchrotype = 'NOTHING'
     req.uidkey = 'email'
     res = send_object(req)
-    print(res)
+    logging.debug(res)
+    record_sent_mail(req.email, req.notificationId, '')
 
 
 def ship_confirmation():
@@ -159,11 +161,12 @@ def ship_confirmation():
     req.synchrotype = 'NOTHING'
     req.uidkey = 'email'
     res = send_object(req)
-    print(res)
+    logging.debug(res)
 
 
 def order_ack():
     """ Order Acknowledgement Email """
+    get_new_orders()
     req = create_request()
     req.email = 'mark.richman@nutrihealth.com'
     config = SafeConfigParser()
@@ -175,10 +178,8 @@ def order_ack():
     req.senddate = strftime("%Y-%m-%dT%H:%M:%S")  # '1980-01-01T00:00:00'
     req.synchrotype = 'NOTHING'
     req.uidkey = 'email'
-
     res = send_object(req)
-
-    print(res)
+    logging.debug(res)
 
 
 def cart_abandon():
@@ -194,10 +195,8 @@ def cart_abandon():
     req.senddate = strftime("%Y-%m-%dT%H:%M:%S")  # '1980-01-01T00:00:00'
     req.synchrotype = 'NOTHING'
     req.uidkey = 'email'
-
     res = send_object(req)
-
-    print(res)
+    logging.debug(res)
 
 
 def get_new_orders():
@@ -219,20 +218,61 @@ def get_new_orders():
         exit(msg)
 
     try:
-        print 'Getting new orders...'
+        logging.info('Getting new orders')
         conn = connect(host=momdb_host, user=momdb_user,
                        password=momdb_password,
                        database=momdb_db, as_dict=True)
         cur = conn.cursor()
         cur.callproc("Emailer_GetNewOrders")
         for row in cur:
-            print "CUSTNUM=%d, FIRSTNAME=%s" % (
-                row['CUSTNUM'], row['FIRSTNAME'])
+            logging.debug("CUSTNUM=%d, FIRSTNAME=%s" % (
+                row['CUSTNUM'], row['FIRSTNAME']))
         conn.close()
     except InterfaceError as error:
         msg = "Error connecting to SQL Server: %s" % error.message
         logging.error(msg)
         exit(msg)
+
+
+def record_sent_mail(email, mailing, external_id):
+    """
+    Writes a record indicating that a mailing has been sent to a
+    specific email address. This will ensure avoiding duplication of sent
+    emails.
+    """
+
+    con = None
+
+    try:
+        con = sqlite3.connect('sender.db')
+
+        cur = con.cursor()
+
+        logging.info("Creating table sent_mail")
+
+        cur.execute(('''CREATE TABLE IF NOT EXISTS sent_mail
+            (id integer primary key, email text, mailing text,
+            external_id text, sent_at datetime)'''))
+
+        logging.info("Recording email sent to " + email)
+
+        cur.execute(('''
+            INSERT INTO sent_mail (email, mailing, external_id, sent_at)
+            VALUES (?, ?, ?, datetime())'''), (email, mailing, external_id, ))
+
+        logging.info("Rows affected: " + str(cur.rowcount))
+
+        con.commit()
+        cur.close()
+
+    except sqlite3.OperationalError, msg:
+        logging.error(msg)
+        raise
+    except sqlite3.DatabaseError, msg:
+        logging.error(msg)
+        raise
+    finally:
+        con.close()
 
 
 if __name__ == '__main__':

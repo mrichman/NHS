@@ -43,3 +43,7 @@ config.ini
 # PyCharm
 .idea/workspace.xml
 .idea/tasks.xml
+
+# SQLite
+*.db
+
