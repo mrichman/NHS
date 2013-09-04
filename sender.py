@@ -21,11 +21,12 @@ to EmailVision:
 
 import argparse
 import logging
+import sqlite3
 from ConfigParser import SafeConfigParser, Error
-from time import strftime
+from datetime import date
 from pymssql import connect, InterfaceError
 from suds.client import Client
-import sqlite3
+from time import strftime
 
 
 LOGGING_LEVELS = {'critical': logging.CRITICAL,
@@ -51,9 +52,6 @@ RANDOMTAGS = {"[EMV] Test": 'FA6100040001FF8C',
 MAILINGS = ['order-conf', 'ship-conf', 'as-prenotice', 'backorder', 'blog-sub',
             'blog-unsub', 'cust-survey', 'cart-abandon-20m',
             'cart-abandon-24h', 'test-email']
-
-logging.basicConfig(level=logging.INFO)
-logging.getLogger('suds.client').setLevel(logging.DEBUG)
 
 
 def create_request():
@@ -96,15 +94,16 @@ def main():
         print('Mailing must be one of %s' % MAILINGS)
         exit(1)
 
-    logging_level = LOGGING_LEVELS.get(args.l, logging.NOTSET)
-    logging.basicConfig(level=logging_level, filename=args.f,
+    # logging_level = LOGGING_LEVELS.get(args.l, logging.DEBUG)
+    logging.basicConfig(level=logging.DEBUG, filename=args.f,
                         format='%(asctime)s %(levelname)s: %(message)s',
                         datefmt='%Y-%m-%d %H:%M:%S')
+    logging.getLogger('suds.client').setLevel(logging.DEBUG)
 
     logging.info(args.m)
 
     if args.m == 'order-conf':
-        order_ack()
+        order_conf()
     elif args.m == 'test-email':
         test_email()
     elif args.m == 'ship-conf':
@@ -167,22 +166,34 @@ def ship_confirmation():
     logging.debug(res)
 
 
-def order_ack():
-    """ Order Acknowledgement Email """
-    get_new_orders()
-    req = create_request()
-    req.email = 'mark.richman@nutrihealth.com'
-    config = SafeConfigParser()
-    config.read('config.ini')
-    key = config.get("emailvision", "order_conf_key")
-    req.encrypt = key
-    req.notificationId = TEMPLATES["Trigger_OrderAckknowledge1"]
-    req.random = RANDOMTAGS["Trigger_OrderAckknowledge1"]
-    req.senddate = strftime("%Y-%m-%dT%H:%M:%S")  # '1980-01-01T00:00:00'
-    req.synchrotype = 'NOTHING'
-    req.uidkey = 'email'
-    res = send_object(req)
-    logging.debug(res)
+def order_conf():
+    """ Order Confirmation Email """
+    orders = get_new_orders()
+    print("Got %d orders" % len(orders))
+    for order in orders:
+        req = create_request()
+        req.dyn = [
+            {
+                'entry': [
+                    {"key": 'FIRSTNAME', 'value': order.first_name},
+                    {"key": 'SHIPINFO-QPRC', 'value': order.html_table()}
+                ]
+            }
+        ]
+        # TODO set req.email = customer's email
+        req.email = 'mark.richman@nutrihealth.com'
+        config = SafeConfigParser()
+        config.read('config.ini')
+        key = config.get("emailvision", "order_conf_key")
+        req.encrypt = key
+        req.notificationId = TEMPLATES["Trigger_OrderAckknowledge1"]
+        req.random = RANDOMTAGS["Trigger_OrderAckknowledge1"]
+        req.senddate = strftime("%Y-%m-%dT%H:%M:%S")  # '1980-01-01T00:00:00'
+        req.synchrotype = 'NOTHING'
+        req.uidkey = 'email'
+        print("Sending SOAP request")
+        res = send_object(req)
+        logging.debug(res)
 
 
 def cart_abandon():
@@ -242,13 +253,13 @@ def backorder_notice():
 
 def get_upcoming_autoship_orders():
     """ Gets upcoming Autoship orders for prenotice email """
-    #TODO
+    # TODO get_upcoming_autoship_orders
     pass
 
 
 def get_backorders():
     """ Gets backorders for notice email """
-    #TODO
+    # TODO get_backorders
     pass
 
 
@@ -270,6 +281,8 @@ def get_new_orders():
         logging.error(msg)
         exit(msg)
 
+    orders = []
+
     try:
         logging.info('Getting new orders')
         conn = connect(host=momdb_host, user=momdb_user,
@@ -280,11 +293,18 @@ def get_new_orders():
         for row in cur:
             logging.debug("CUSTNUM=%d, FIRSTNAME=%s" % (
                 row['CUSTNUM'], row['FIRSTNAME']))
+            o = Order(row)
+            orders.append(o)
         conn.close()
     except InterfaceError as error:
         msg = "Error connecting to SQL Server: %s" % error.message
         logging.error(msg)
         exit(msg)
+    except Error as error:
+        logging.error(error.message)
+        exit(error.message)
+
+    return orders
 
 
 def record_sent_mail(email, mailing, external_id):
@@ -326,6 +346,91 @@ def record_sent_mail(email, mailing, external_id):
         raise
     finally:
         con.close()
+
+
+class Order(object):
+
+    def __init__(self, row=None):
+        if row is None:
+            self.order_num = ''
+            self.cust_num = ''
+            self.first_name = ''
+            self.last_name = ''
+            self.expect_ship = date.today()
+            self.sku = ''
+            self.description = ''
+            self.list_price = ''
+            self.unit_price = ''
+            self.ext_price = ''
+            self.qty = 0
+            self.tax = 0
+            self.shipping = 0
+            self.total = 0
+            self.ship_type = ''
+            self.tracking_num = ''
+            self.tracking_url = ''
+            self.source_key = ''
+            self.order_items = []
+        else:
+            self.order_num = row['ORDERNO']
+            self.cust_num = row['CUSTNUM']
+            self.first_name = row['FIRSTNAME']
+            self.last_name = row['LASTNAME']
+            self.expect_ship = row['NEXT_SHIP']
+            self.sku = row['ITEM']
+            self.description = row['DESC1']
+            self.list_price = row['IT_UNLIST']
+            self.unit_price = ''
+            self.ext_price = ''
+            self.qty = row['QUANTO']
+            self.tax = row['TAX']
+            self.shipping = row['SHIPPING']
+            self.total = row['ORD_TOTAL']
+            self.ship_type = ''
+            self.tracking_num = ''
+            self.tracking_url = ''
+            self.source_key = row['SourceKey']
+            self.order_items = []
+
+    def html_table(self):
+        s = ("<table border=\"1\">"
+             "  <tr>"
+             "    <th>Item Number</th>"
+             "    <th>Product Name</th>"
+             "    <th>Qty</th>"
+             "    <th>Price</th>"
+             "    <th>Total</th>"
+             "  </tr>"
+             "  <tr>"
+             "    <td>" + self.sku + "</td>"
+             "    <td>" + self.description + "</td>"
+             "    <td>" + str(self.qty) + "</td>"
+             "    <td>" + str(self.list_price) + "</td>"
+             "    <td>" + str(self.total) + "</td>"
+             "  </tr>"
+             "</table>")
+        logging.debug(s)
+        print(s)
+        return s
+
+
+class OrderItem(object):
+
+    def __init__(self):
+        self.order_num = ''
+        self.expect_ship = date.today()
+        self.sku = ''
+        self.description = ''
+        self.list_price = ''
+        self.unit_price = ''
+        self.ext_price = ''
+        self.qty = 0
+        self.tax = 0
+        self.shipping = 0
+        self.ship_type = ''
+        self.tracking_num = ''
+        self.tracking_url = ''
+        self.source_key = ''
 
 
 if __name__ == '__main__':
