@@ -94,8 +94,8 @@ def main():
         print('Mailing must be one of %s' % MAILINGS)
         exit(1)
 
-    # logging_level = LOGGING_LEVELS.get(args.l, logging.DEBUG)
-    logging.basicConfig(level=logging.DEBUG, filename=args.f,
+    logging_level = LOGGING_LEVELS.get(args.l, logging.INFO)
+    logging.basicConfig(level=logging_level, filename=args.f,
                         format='%(asctime)s %(levelname)s: %(message)s',
                         datefmt='%Y-%m-%d %H:%M:%S')
     logging.getLogger('suds.client').setLevel(logging.DEBUG)
@@ -118,35 +118,39 @@ def main():
 
 def test_email():
     """ Send test email """
+    order = Order()
+    order.first_name = 'Mark'
+    order.sku = '10400'
+    order.description = 'Lorem ipsum'
     req = create_request()
-
     req.dyn = [
         {
-            'entry': [{"key": 'TEST', 'value': 'This is a test email'}]
+            'entry': [
+                {"key": 'FIRSTNAME', 'value': order.first_name}
+            ]
         }
     ]
-
     req.content = [
         {
             'entry': [
-                {'key': 1, 'value': '<table border=\'5\'><tr><td>'},
-                {'key': 2, 'value': '</td></tr></table>'}]
+                {'key': 1, 'value': order.html_table()}
+            ]
         }
     ]
-
+    # TODO set req.email = customer's email
     req.email = 'mark.richman@nutrihealth.com'
     config = SafeConfigParser()
     config.read('config.ini')
-    key = config.get("emailvision", "test_key")
+    key = config.get("emailvision", "order_conf_key")
     req.encrypt = key
-    req.notificationId = TEMPLATES["[EMV] Test"]
-    req.random = RANDOMTAGS["[EMV] Test"]
+    req.notificationId = TEMPLATES["Trigger_OrderAckknowledge1"]
+    req.random = RANDOMTAGS["Trigger_OrderAckknowledge1"]
     req.senddate = strftime("%Y-%m-%dT%H:%M:%S")  # '1980-01-01T00:00:00'
     req.synchrotype = 'NOTHING'
     req.uidkey = 'email'
+    print("Sending SOAP request")
     res = send_object(req)
     logging.debug(res)
-    record_sent_mail(req.email, req.notificationId, '')
 
 
 def ship_confirmation():
@@ -175,8 +179,14 @@ def order_conf():
         req.dyn = [
             {
                 'entry': [
-                    {"key": 'FIRSTNAME', 'value': order.first_name},
-                    {"key": 'SHIPINFO-QPRC', 'value': order.html_table()}
+                    {"key": 'FIRSTNAME', 'value': order.first_name}
+                ]
+            }
+        ]
+        req.content = [
+            {
+                'entry': [
+                    {'key': 1, 'value': order.html_table()}
                 ]
             }
         ]
@@ -393,7 +403,7 @@ class Order(object):
             self.order_items = []
 
     def html_table(self):
-        s = ("<table border=\"1\">"
+        s = ("<table>"
              "  <tr>"
              "    <th>Item Number</th>"
              "    <th>Product Name</th>"
