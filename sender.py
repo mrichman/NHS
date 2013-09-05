@@ -119,9 +119,17 @@ def main():
 def test_email():
     """ Send test email """
     order = Order()
-    order.first_name = 'Mark'
+    order.first_name = 'Jan'
+    order.last_name = 'Alexander'
+    order.email = 'jealexander6861@gmail.com'
     order.sku = '10400'
-    order.description = 'Lorem ipsum'
+    order.description = 'Flora Source 60 ct'
+    order.cust_num = 5173525
+    order.list_price = 33.00
+    order.order_num = 838513
+    order.qty = 3
+    order.total = 99.00
+    order.tax = 0.00
     req = create_request()
     req.dyn = [
         {
@@ -137,8 +145,7 @@ def test_email():
             ]
         }
     ]
-    # TODO set req.email = customer's email
-    req.email = 'mark.richman@nutrihealth.com'
+    req.email = 'mark.richman@nutri-health.com'
     config = SafeConfigParser()
     config.read('config.ini')
     key = config.get("emailvision", "order_conf_key")
@@ -226,6 +233,7 @@ def cart_abandon():
 def autoship_prenotice():
     """ Autoship Prenotice Email """
     orders = get_upcoming_autoship_orders()
+    # TODO iterate through orders and generate emails
     config = SafeConfigParser()
     config.read('config.ini')
     key = config.get("emailvision", "as_prenotice_key")
@@ -245,6 +253,7 @@ def autoship_prenotice():
 def backorder_notice():
     """ Backorder Notice Email """
     orders = get_backorders()
+    # TODO iterate through orders and generate emails
     config = SafeConfigParser()
     config.read('config.ini')
     key = config.get("emailvision", "backorder_notice_key")
@@ -277,7 +286,24 @@ def get_new_orders():
     """
     Get new orders from MOM by calling sproc "Emailer_GetNewOrders"
     """
+    orders = []
+    try:
+        conn = get_mom_connection()
+        cur = conn.cursor()
+        cur.callproc("Emailer_GetNewOrders")
+        for row in cur:
+            logging.debug("CUSTNUM=%d, FIRSTNAME=%s" % (
+                row['CUSTNUM'], row['FIRSTNAME']))
+            order = Order(row)
+            orders.append(order)
+        conn.close()
+    except Error as error:
+        logging.error(error.message)
+        exit(error.message)
+    return orders
 
+
+def get_mom_connection():
     config = SafeConfigParser()
     config.read('config.ini')
 
@@ -291,21 +317,12 @@ def get_new_orders():
         logging.error(msg)
         exit(msg)
 
-    orders = []
-
     try:
-        logging.info('Getting new orders')
+        logging.info('Connecting to MOM...')
         conn = connect(host=momdb_host, user=momdb_user,
                        password=momdb_password,
                        database=momdb_db, as_dict=True)
-        cur = conn.cursor()
-        cur.callproc("Emailer_GetNewOrders")
-        for row in cur:
-            logging.debug("CUSTNUM=%d, FIRSTNAME=%s" % (
-                row['CUSTNUM'], row['FIRSTNAME']))
-            o = Order(row)
-            orders.append(o)
-        conn.close()
+        return conn
     except InterfaceError as error:
         msg = "Error connecting to SQL Server: %s" % error.message
         logging.error(msg)
@@ -313,8 +330,6 @@ def get_new_orders():
     except Error as error:
         logging.error(error.message)
         exit(error.message)
-
-    return orders
 
 
 def record_sent_mail(email, mailing, external_id):
@@ -359,13 +374,14 @@ def record_sent_mail(email, mailing, external_id):
 
 
 class Order(object):
-
+    """ Order """
     def __init__(self, row=None):
         if row is None:
             self.order_num = ''
             self.cust_num = ''
             self.first_name = ''
             self.last_name = ''
+            self.email = ''
             self.expect_ship = date.today()
             self.sku = ''
             self.description = ''
@@ -386,6 +402,7 @@ class Order(object):
             self.cust_num = row['CUSTNUM']
             self.first_name = row['FIRSTNAME']
             self.last_name = row['LASTNAME']
+            self.email = row['EMAIL']
             self.expect_ship = row['NEXT_SHIP']
             self.sku = row['ITEM']
             self.description = row['DESC1']
@@ -403,44 +420,63 @@ class Order(object):
             self.order_items = []
 
     def html_table(self):
-        s = ("<table>"
-             "  <tr>"
-             "    <th>Item Number</th>"
-             "    <th>Product Name</th>"
-             "    <th>Qty</th>"
-             "    <th>Price</th>"
-             "    <th>Total</th>"
-             "  </tr>"
-             "  <tr>"
+        """ Returns order as a collection of HTML rows """
+        s = ("  <tr>"
              "    <td>" + self.sku + "</td>"
              "    <td>" + self.description + "</td>"
              "    <td>" + str(self.qty) + "</td>"
-             "    <td>" + str(self.list_price) + "</td>"
+             "    <td>" + "%0.2f" % self.list_price + "</td>"
              "    <td>" + str(self.total) + "</td>"
-             "  </tr>"
-             "</table>")
+             "  </tr>")
         logging.debug(s)
         print(s)
         return s
 
 
 class OrderItem(object):
+    """ Order Item  """
+    def __init__(self, row=None):
+        if row is None:
+            self.order_num = ''
+            self.expect_ship = date.today()
+            self.sku = ''
+            self.description = ''
+            self.list_price = ''
+            self.unit_price = ''
+            self.ext_price = ''
+            self.qty = 0
+            self.tax = 0
+            self.shipping = 0
+            self.ship_type = ''
+            self.tracking_num = ''
+            self.tracking_url = ''
+            self.source_key = ''
+        else:
+            self.order_num = row['ORDERNO']
+            self.expect_ship = row['NEXT_SHIP']
+            self.sku = row['ITEM']
+            self.description = row['DESC1']
+            self.list_price = row['IT_UNLIST']
+            self.unit_price = ''
+            self.ext_price = ''
+            self.qty = row['QUANTO']
+            self.tax = row['TAX']
+            self.shipping = row['SHIPPING']
+            self.ship_type = ''
+            self.tracking_num = ''
+            self.tracking_url = ''
+            self.source_key = row['SourceKey']
 
-    def __init__(self):
-        self.order_num = ''
-        self.expect_ship = date.today()
-        self.sku = ''
-        self.description = ''
-        self.list_price = ''
-        self.unit_price = ''
-        self.ext_price = ''
-        self.qty = 0
-        self.tax = 0
-        self.shipping = 0
-        self.ship_type = ''
-        self.tracking_num = ''
-        self.tracking_url = ''
-        self.source_key = ''
+    def html_row(self):
+        """ Returns order item as an HTML row """
+        s = ("  <tr>"
+             "    <td>" + self.sku + "</td>"
+             "    <td>" + self.description + "</td>"
+             "    <td>" + str(self.qty) + "</td>"
+             "    <td>" + "%0.2f" % self.list_price + "</td>"
+             "    <td>" + str(self.total) + "</td>"
+             "  </tr>")
+        return s
 
 
 if __name__ == '__main__':

@@ -43,7 +43,15 @@ config.ini
 # PyCharm
 .idea/workspace.xml
 .idea/tasks.xml
+.idea/.name
+.idea/NHS.iml
+.idea/encodings.xml
+.idea/misc.xml
+.idea/modules.xml
+.idea/other.xml
+.idea/scopes/scope_settings.xml
+.idea/testrunner.xml
+.idea/vcs.xml
 
 # SQLite
 *.db
-
