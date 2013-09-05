@@ -35,6 +35,9 @@ LOGGING_LEVELS = {'critical': logging.CRITICAL,
                   'info': logging.INFO,
                   'debug': logging.DEBUG}
 
+WSDL_URL = \
+    'http://api.notificationmessaging.com/NMSOAP/NotificationService?wsdl'
+
 TEMPLATES = {"[EMV] Test": 15367,
              "Trigger_OrderShipment1": 1532948,
              "Trigger_OrderAckknowledge1": 1532947,
@@ -56,16 +59,13 @@ MAILINGS = ['order-conf', 'ship-conf', 'as-prenotice', 'backorder', 'blog-sub',
 
 def create_request():
     """ Creates EmailVision SOAP Request Client """
-    client = Client(
-        'http://api.notificationmessaging.com/NMSOAP/NotificationService?wsdl')
-
+    client = Client(WSDL_URL)
     return client.factory.create('sendRequest')
 
 
 def send_object(request):
     """ Sends SOAP Request """
-    client = Client(
-        'http://api.notificationmessaging.com/NMSOAP/NotificationService?wsdl')
+    client = Client(WSDL_URL)
     return client.service.sendObject(request)
 
 
@@ -93,6 +93,8 @@ def main():
     if args.m not in MAILINGS:
         print('Mailing must be one of %s' % MAILINGS)
         exit(1)
+
+    setup_sqlite()
 
     logging_level = LOGGING_LEVELS.get(args.l, logging.INFO)
     logging.basicConfig(level=logging_level, filename=args.f,
@@ -155,9 +157,13 @@ def test_email():
     req.senddate = strftime("%Y-%m-%dT%H:%M:%S")  # '1980-01-01T00:00:00'
     req.synchrotype = 'NOTHING'
     req.uidkey = 'email'
-    print("Sending SOAP request")
-    res = send_object(req)
-    logging.debug(res)
+    if not was_mail_sent(req.email, req.notificationId):
+        print("Sending SOAP request")
+        res = send_object(req)
+        logging.debug(res)
+        record_sent_mail(req.email, req.notificationId)
+    else:
+        logging.debug("Mail already sent. Skipping.")
 
 
 def ship_confirmation():
@@ -173,8 +179,13 @@ def ship_confirmation():
     req.senddate = strftime("%Y-%m-%dT%H:%M:%S")  # '1980-01-01T00:00:00'
     req.synchrotype = 'NOTHING'
     req.uidkey = 'email'
-    res = send_object(req)
-    logging.debug(res)
+    if not was_mail_sent(req.email, req.notificationId):
+        print("Sending SOAP request")
+        res = send_object(req)
+        logging.debug(res)
+        record_sent_mail(req.email, req.notificationId)
+    else:
+        logging.debug("Mail already sent. Skipping.")
 
 
 def order_conf():
@@ -208,9 +219,13 @@ def order_conf():
         req.senddate = strftime("%Y-%m-%dT%H:%M:%S")  # '1980-01-01T00:00:00'
         req.synchrotype = 'NOTHING'
         req.uidkey = 'email'
-        print("Sending SOAP request")
-        res = send_object(req)
-        logging.debug(res)
+        if not was_mail_sent(req.email, req.notificationId, order.order_num):
+            print("Sending SOAP request")
+            res = send_object(req)
+            logging.debug(res)
+            record_sent_mail(req.email, req.notificationId, order.order_num)
+        else:
+            logging.debug("Mail already sent. Skipping.")
 
 
 def cart_abandon():
@@ -226,8 +241,13 @@ def cart_abandon():
     req.senddate = strftime("%Y-%m-%dT%H:%M:%S")  # '1980-01-01T00:00:00'
     req.synchrotype = 'NOTHING'
     req.uidkey = 'email'
-    res = send_object(req)
-    logging.debug(res)
+    if not was_mail_sent(req.email, req.notificationId):
+        print("Sending SOAP request")
+        res = send_object(req)
+        logging.debug(res)
+        record_sent_mail(req.email, req.notificationId)
+    else:
+        logging.debug("Mail already sent. Skipping.")
 
 
 def autoship_prenotice():
@@ -245,9 +265,13 @@ def autoship_prenotice():
     req.senddate = strftime("%Y-%m-%dT%H:%M:%S")  # '1980-01-01T00:00:00'
     req.synchrotype = 'NOTHING'
     req.uidkey = 'email'
-    res = send_object(req)
-    logging.debug(res)
-    record_sent_mail(req.email, req.notificationId, '')
+    if not was_mail_sent(req.email, req.notificationId):
+        print("Sending SOAP request")
+        res = send_object(req)
+        logging.debug(res)
+        record_sent_mail(req.email, req.notificationId)
+    else:
+        logging.debug("Mail already sent. Skipping.")
 
 
 def backorder_notice():
@@ -265,9 +289,13 @@ def backorder_notice():
     req.senddate = strftime("%Y-%m-%dT%H:%M:%S")  # '1980-01-01T00:00:00'
     req.synchrotype = 'NOTHING'
     req.uidkey = 'email'
-    res = send_object(req)
-    logging.debug(res)
-    record_sent_mail(req.email, req.notificationId, '')
+    if not was_mail_sent(req.email, req.notificationId):
+        print("Sending SOAP request")
+        res = send_object(req)
+        logging.debug(res)
+        record_sent_mail(req.email, req.notificationId)
+    else:
+        logging.debug("Mail already sent. Skipping.")
 
 
 def get_upcoming_autoship_orders():
@@ -304,6 +332,7 @@ def get_new_orders():
 
 
 def get_mom_connection():
+    """ Gets SQL Server connection to MOM """
     config = SafeConfigParser()
     config.read('config.ini')
 
@@ -332,7 +361,32 @@ def get_mom_connection():
         exit(error.message)
 
 
-def record_sent_mail(email, mailing, external_id):
+def setup_sqlite():
+    """ Create SQLite3 tracking database if it doesn't exist """
+    con = None
+
+    try:
+        con = sqlite3.connect('sender.db')
+        cur = con.cursor()
+        logging.info("Creating table sent_mail")
+
+        cur.execute(('''CREATE TABLE IF NOT EXISTS sent_mail
+            (id integer primary key, email text, mailing text,
+            external_id text, sent_at datetime)'''))
+
+        con.commit()
+        cur.close()
+    except sqlite3.OperationalError, msg:
+        logging.error(msg)
+        raise
+    except sqlite3.DatabaseError, msg:
+        logging.error(msg)
+        raise
+    finally:
+        con.close()
+
+
+def record_sent_mail(email, mailing, external_id=''):
     """
     Writes a record indicating that a mailing has been sent to a
     specific email address. This will ensure avoiding duplication of sent
@@ -343,15 +397,7 @@ def record_sent_mail(email, mailing, external_id):
 
     try:
         con = sqlite3.connect('sender.db')
-
         cur = con.cursor()
-
-        logging.info("Creating table sent_mail")
-
-        cur.execute(('''CREATE TABLE IF NOT EXISTS sent_mail
-            (id integer primary key, email text, mailing text,
-            external_id text, sent_at datetime)'''))
-
         logging.info("Recording email sent to " + email)
 
         cur.execute(('''
@@ -368,6 +414,49 @@ def record_sent_mail(email, mailing, external_id):
         raise
     except sqlite3.DatabaseError, msg:
         logging.error(msg)
+        raise
+    finally:
+        con.close()
+
+
+def was_mail_sent(email, mailing, external_id=None):
+    """
+    Determines if a mailing has been sent to aspecific email address. This will
+    ensure avoiding duplication of sent emails.
+    """
+
+    con = None
+
+    try:
+        con = sqlite3.connect('sender.db')
+        cur = con.cursor()
+        logging.info("Looking for email sent to " + email)
+
+        if not external_id:
+            cur.execute(
+                ("SELECT COUNT(email) "
+                "FROM sent_mail "
+                "WHERE email = ? "
+                "AND mailing = ?"), (email, mailing, ))
+        else:
+            cur.execute(('''
+                SELECT COUNT(email) FROM sent_mail WHERE email = ?
+                AND mailing = ?
+                AND external_id = ?'''), (email, mailing, external_id, ))
+
+        sent_count = cur.fetchone()[0]
+        logging.info("Count: " + str(sent_count))
+        con.commit()
+        cur.close()
+        return sent_count > 0
+    except sqlite3.OperationalError, msg:
+        logging.error(msg)
+        raise
+    except sqlite3.DatabaseError, msg:
+        logging.error(msg)
+        raise
+    except sqlite3.Error as error:
+        logging.error(error.message)
         raise
     finally:
         con.close()
@@ -445,12 +534,13 @@ class OrderItem(object):
             self.unit_price = ''
             self.ext_price = ''
             self.qty = 0
-            self.tax = 0
-            self.shipping = 0
+            self.tax = 0.00
+            self.shipping = 0.00
             self.ship_type = ''
             self.tracking_num = ''
             self.tracking_url = ''
             self.source_key = ''
+            self.total = 0.00
         else:
             self.order_num = row['ORDERNO']
             self.expect_ship = row['NEXT_SHIP']
@@ -466,6 +556,7 @@ class OrderItem(object):
             self.tracking_num = ''
             self.tracking_url = ''
             self.source_key = row['SourceKey']
+            self.total = 0.00
 
     def html_row(self):
         """ Returns order item as an HTML row """
