@@ -154,8 +154,7 @@ def test_email():
     req.email = 'mark.richman@nutri-health.com'
     config = SafeConfigParser()
     config.read('config.ini')
-    key = config.get("emailvision", "order_conf_key")
-    req.encrypt = key
+    req.encrypt = config.get("emailvision", "order_conf_key")
     req.notificationId = TEMPLATES["Trigger_OrderAckknowledge1"]
     req.random = RANDOMTAGS["Trigger_OrderAckknowledge1"]
     req.senddate = strftime("%Y-%m-%dT%H:%M:%S")  # '1980-01-01T00:00:00'
@@ -175,8 +174,7 @@ def ship_confirmation():
     req.email = 'mark.richman@nutrihealth.com'
     config = SafeConfigParser()
     config.read('config.ini')
-    key = config.get("emailvision", "ship_conf_key")
-    req.encrypt = key
+    req.encrypt = config.get("emailvision", "ship_conf_key")
     req.notificationId = TEMPLATES["Trigger_OrderShipment1"]
     req.random = RANDOMTAGS["Trigger_OrderShipment1"]
     req.senddate = strftime("%Y-%m-%dT%H:%M:%S")  # '1980-01-01T00:00:00'
@@ -214,8 +212,7 @@ def order_conf():
         req.email = 'mark.richman@nutrihealth.com'
         config = SafeConfigParser()
         config.read('config.ini')
-        key = config.get("emailvision", "order_conf_key")
-        req.encrypt = key
+        req.encrypt = config.get("emailvision", "order_conf_key")
         req.notificationId = TEMPLATES["Trigger_OrderAckknowledge1"]
         req.random = RANDOMTAGS["Trigger_OrderAckknowledge1"]
         req.senddate = strftime("%Y-%m-%dT%H:%M:%S")  # '1980-01-01T00:00:00'
@@ -231,12 +228,13 @@ def order_conf():
 
 def cart_abandon():
     """ Cart Abandonment Email """
+    # TODO get abandoned carts from Pinnacle
+    # See Pinnacle ticket IIM-445881
     config = SafeConfigParser()
     config.read('config.ini')
-    key = config.get("emailvision", "cart_abandon_key")
     req = create_request()
     req.email = 'mark.richman@nutrihealth.com'
-    req.encrypt = key
+    req.encrypt = config.get("emailvision", "cart_abandon_key")
     req.notificationId = TEMPLATES["TEST-Drift-Trigger1"]
     req.random = RANDOMTAGS["TEST-Drift-Trigger1"]
     req.senddate = strftime("%Y-%m-%dT%H:%M:%S")  # '1980-01-01T00:00:00'
@@ -253,24 +251,41 @@ def cart_abandon():
 def autoship_prenotice():
     """ Autoship Prenotice Email """
     orders = get_upcoming_autoship_orders()
-    # TODO iterate through orders and generate emails
-    config = SafeConfigParser()
-    config.read('config.ini')
-    key = config.get("emailvision", "as_prenotice_key")
-    req = create_request()
-    req.email = 'mark.richman@nutrihealth.com'
-    req.encrypt = key
-    req.notificationId = TEMPLATES["Autoship-Prenotice"]
-    req.random = RANDOMTAGS["Autoship-Prenotice"]
-    req.senddate = strftime("%Y-%m-%dT%H:%M:%S")  # '1980-01-01T00:00:00'
-    req.synchrotype = 'NOTHING'
-    req.uidkey = 'email'
-    if not was_mail_sent(req.email, req.notificationId):
-        res = send_object(req)
-        logging.debug(res)
-        record_sent_mail(req.email, req.notificationId)
-    else:
-        logging.debug("Mail already sent. Skipping.")
+    logging.info("Got %d orders from MOM." % len(orders))
+    for order in orders:
+        req = create_request()
+        req.dyn = [
+            {
+                'entry': [
+                    {"key": 'FIRSTNAME', 'value': order.first_name}
+                ]
+            }
+        ]
+        req.content = [
+            {
+                'entry': [
+                    {'key': 1, 'value': order.html_table()}
+                ]
+            }
+        ]
+        # TODO set req.email = customer's email
+        req.email = 'mark.richman@nutrihealth.com'
+        config = SafeConfigParser()
+        config.read('config.ini')
+        req = create_request()
+        req.email = 'mark.richman@nutrihealth.com'
+        req.encrypt = config.get("emailvision", "as_prenotice_key")
+        req.notificationId = TEMPLATES["Autoship-Prenotice"]
+        req.random = RANDOMTAGS["Autoship-Prenotice"]
+        req.senddate = strftime("%Y-%m-%dT%H:%M:%S")  # '1980-01-01T00:00:00'
+        req.synchrotype = 'NOTHING'
+        req.uidkey = 'email'
+        if not was_mail_sent(req.email, req.notificationId, order.order_num):
+            res = send_object(req)
+            logging.debug(res)
+            record_sent_mail(req.email, req.notificationId, order.order_num)
+        else:
+            logging.debug("Mail already sent. Skipping.")
 
 
 def backorder_notice():
@@ -279,10 +294,9 @@ def backorder_notice():
     # TODO iterate through orders and generate emails
     config = SafeConfigParser()
     config.read('config.ini')
-    key = config.get("emailvision", "backorder_notice_key")
     req = create_request()
     req.email = 'mark.richman@nutrihealth.com'
-    req.encrypt = key
+    req.encrypt = config.get("emailvision", "backorder_notice_key")
     req.notificationId = TEMPLATES["Backorder-Notice"]
     req.random = RANDOMTAGS["Backorder-Notice"]
     req.senddate = strftime("%Y-%m-%dT%H:%M:%S")  # '1980-01-01T00:00:00'
@@ -298,8 +312,21 @@ def backorder_notice():
 
 def get_upcoming_autoship_orders():
     """ Gets upcoming Autoship orders for prenotice email """
-    # TODO get_upcoming_autoship_orders
-    pass
+    orders = []
+    try:
+        conn = get_mom_connection()
+        cur = conn.cursor()
+        cur.callproc("GetAutoShipPreNotice")
+        for row in cur:
+            logging.debug("CUSTNUM=%d, FIRSTNAME=%s" % (
+                row['CUSTNUM'], row['FIRSTNAME']))
+            order = Order(row)
+            orders.append(order)
+        conn.close()
+    except Error as error:
+        logging.error(error.message)
+        exit(error.message)
+    return orders
 
 
 def get_backorders():
@@ -390,23 +417,23 @@ def record_sent_mail(email, mailing, external_id=None):
     specific email address. This will ensure avoiding duplication of sent
     emails.
     """
-
     con = None
-
     try:
         con = sqlite3.connect('sender.db')
         cur = con.cursor()
         logging.info("Recording email sent to " + email)
-
-        cur.execute(('''
-            INSERT INTO sent_mail (email, mailing, external_id, sent_at)
-            VALUES (?, ?, ?, datetime())'''), (email, str(mailing), str(external_id), ))
+        if external_id:
+            cur.execute(('''
+                INSERT INTO sent_mail (email, mailing, external_id, sent_at)
+                VALUES (?, ?, ?, datetime())'''), (email, str(mailing), str(external_id), ))
+        else:
+            cur.execute(('''
+                INSERT INTO sent_mail (email, mailing, external_id, sent_at)
+                VALUES (?, ?, NULL, datetime())'''), (email, str(mailing), ))
 
         logging.info("Inserted %d records. " % cur.rowcount)
-
         con.commit()
         cur.close()
-
     except sqlite3.OperationalError, msg:
         logging.error(msg)
         raise
@@ -493,13 +520,13 @@ class Order(object):
             self.expect_ship = row['NEXT_SHIP']
             self.sku = row['ITEM']
             self.description = row['DESC1']
-            self.list_price = row['IT_UNLIST']
+            self.list_price = row.get('IT_UNLIST', 0)
             self.unit_price = ''
             self.ext_price = ''
             self.qty = row['QUANTO']
-            self.tax = row['TAX']
-            self.shipping = row['SHIPPING']
-            self.total = row['ORD_TOTAL']
+            self.tax = row.get('TAX', 0)
+            self.shipping = row.get('SHIPPING', 0)
+            self.total = row.get('ORD_TOTAL', 0)
             self.ship_type = ''
             self.tracking_num = ''
             self.tracking_url = ''
