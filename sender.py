@@ -65,6 +65,7 @@ def create_request():
 
 def send_object(request):
     """ Sends SOAP Request """
+    logging.info("Sending SOAP request...")
     client = Client(WSDL_URL)
     return client.service.sendObject(request)
 
@@ -80,8 +81,8 @@ def main():
     )
     parser.add_argument(
         '-f',
-        default='pinnacle_export.log',
-        help='logging file. Default is pinnacle_export.log.'
+        default='sender.log',
+        help='logging file. Default is sender.log.'
     )
     parser.add_argument(
         '-m',
@@ -94,15 +95,18 @@ def main():
         print('Mailing must be one of %s' % MAILINGS)
         exit(1)
 
-    setup_sqlite()
-
     logging_level = LOGGING_LEVELS.get(args.l, logging.INFO)
     logging.basicConfig(level=logging_level, filename=args.f,
                         format='%(asctime)s %(levelname)s: %(message)s',
                         datefmt='%Y-%m-%d %H:%M:%S')
-    logging.getLogger('suds.client').setLevel(logging.DEBUG)
+    logging.getLogger().setLevel(logging_level)
+    logging.getLogger('suds.client').setLevel(logging_level)
+    # console handler with specified log level
+    ch = logging.StreamHandler()
+    ch.setLevel(logging_level)
+    logging.getLogger().addHandler(ch)
 
-    logging.info(args.m)
+    setup_sqlite()
 
     if args.m == 'order-conf':
         order_conf()
@@ -158,12 +162,11 @@ def test_email():
     req.synchrotype = 'NOTHING'
     req.uidkey = 'email'
     if not was_mail_sent(req.email, req.notificationId):
-        print("Sending SOAP request")
         res = send_object(req)
         logging.debug(res)
         record_sent_mail(req.email, req.notificationId)
     else:
-        logging.debug("Mail already sent. Skipping.")
+        logging.info("Mail already sent. Skipping.")
 
 
 def ship_confirmation():
@@ -180,7 +183,6 @@ def ship_confirmation():
     req.synchrotype = 'NOTHING'
     req.uidkey = 'email'
     if not was_mail_sent(req.email, req.notificationId):
-        print("Sending SOAP request")
         res = send_object(req)
         logging.debug(res)
         record_sent_mail(req.email, req.notificationId)
@@ -191,7 +193,7 @@ def ship_confirmation():
 def order_conf():
     """ Order Confirmation Email """
     orders = get_new_orders()
-    print("Got %d orders" % len(orders))
+    logging.info("Got %d orders from MOM." % len(orders))
     for order in orders:
         req = create_request()
         req.dyn = [
@@ -220,7 +222,6 @@ def order_conf():
         req.synchrotype = 'NOTHING'
         req.uidkey = 'email'
         if not was_mail_sent(req.email, req.notificationId, order.order_num):
-            print("Sending SOAP request")
             res = send_object(req)
             logging.debug(res)
             record_sent_mail(req.email, req.notificationId, order.order_num)
@@ -242,7 +243,6 @@ def cart_abandon():
     req.synchrotype = 'NOTHING'
     req.uidkey = 'email'
     if not was_mail_sent(req.email, req.notificationId):
-        print("Sending SOAP request")
         res = send_object(req)
         logging.debug(res)
         record_sent_mail(req.email, req.notificationId)
@@ -266,7 +266,6 @@ def autoship_prenotice():
     req.synchrotype = 'NOTHING'
     req.uidkey = 'email'
     if not was_mail_sent(req.email, req.notificationId):
-        print("Sending SOAP request")
         res = send_object(req)
         logging.debug(res)
         record_sent_mail(req.email, req.notificationId)
@@ -290,7 +289,6 @@ def backorder_notice():
     req.synchrotype = 'NOTHING'
     req.uidkey = 'email'
     if not was_mail_sent(req.email, req.notificationId):
-        print("Sending SOAP request")
         res = send_object(req)
         logging.debug(res)
         record_sent_mail(req.email, req.notificationId)
@@ -368,7 +366,7 @@ def setup_sqlite():
     try:
         con = sqlite3.connect('sender.db')
         cur = con.cursor()
-        logging.info("Creating table sent_mail")
+        logging.info("Creating table sent_mail if absent...")
 
         cur.execute(('''CREATE TABLE IF NOT EXISTS sent_mail
             (id integer primary key, email text, mailing text,
@@ -386,7 +384,7 @@ def setup_sqlite():
         con.close()
 
 
-def record_sent_mail(email, mailing, external_id=''):
+def record_sent_mail(email, mailing, external_id=None):
     """
     Writes a record indicating that a mailing has been sent to a
     specific email address. This will ensure avoiding duplication of sent
@@ -402,9 +400,9 @@ def record_sent_mail(email, mailing, external_id=''):
 
         cur.execute(('''
             INSERT INTO sent_mail (email, mailing, external_id, sent_at)
-            VALUES (?, ?, ?, datetime())'''), (email, mailing, external_id, ))
+            VALUES (?, ?, ?, datetime())'''), (email, str(mailing), str(external_id), ))
 
-        logging.info("Rows affected: " + str(cur.rowcount))
+        logging.info("Inserted %d records. " % cur.rowcount)
 
         con.commit()
         cur.close()
@@ -421,8 +419,8 @@ def record_sent_mail(email, mailing, external_id=''):
 
 def was_mail_sent(email, mailing, external_id=None):
     """
-    Determines if a mailing has been sent to aspecific email address. This will
-    ensure avoiding duplication of sent emails.
+    Determines if a mailing has been sent to a specific email address.
+    This will ensure avoiding duplication of sent emails.
     """
 
     con = None
@@ -430,22 +428,22 @@ def was_mail_sent(email, mailing, external_id=None):
     try:
         con = sqlite3.connect('sender.db')
         cur = con.cursor()
-        logging.info("Looking for email sent to " + email)
+        logging.info("Looking for email %s sent to %s with id %s" % (mailing, email, external_id))
 
         if not external_id:
             cur.execute(
                 ("SELECT COUNT(email) "
-                "FROM sent_mail "
-                "WHERE email = ? "
-                "AND mailing = ?"), (email, mailing, ))
+                    "FROM sent_mail "
+                    "WHERE email = ? "
+                    "AND mailing = ?"), (email, mailing, ))
         else:
-            cur.execute(('''
-                SELECT COUNT(email) FROM sent_mail WHERE email = ?
-                AND mailing = ?
-                AND external_id = ?'''), (email, mailing, external_id, ))
+            cur.execute(
+                ("SELECT COUNT(email) FROM sent_mail WHERE email = ? "
+                 "AND mailing = ? "
+                 "AND external_id = ?"), (email, mailing, str(external_id), ))
 
         sent_count = cur.fetchone()[0]
-        logging.info("Count: " + str(sent_count))
+        logging.info("Found %d records." % sent_count)
         con.commit()
         cur.close()
         return sent_count > 0
@@ -518,7 +516,6 @@ class Order(object):
              "    <td>" + str(self.total) + "</td>"
              "  </tr>")
         logging.debug(s)
-        print(s)
         return s
 
 
@@ -567,6 +564,7 @@ class OrderItem(object):
              "    <td>" + "%0.2f" % self.list_price + "</td>"
              "    <td>" + str(self.total) + "</td>"
              "  </tr>")
+        logging.debug(s)
         return s
 
 
