@@ -25,9 +25,10 @@ import sqlite3
 from ConfigParser import SafeConfigParser, Error
 from datetime import date
 from pymssql import connect, InterfaceError
-from suds.client import Client
 from time import strftime
 
+from suds.client import Client
+from pinnacle import PinnacleClient
 
 LOGGING_LEVELS = {'critical': logging.CRITICAL,
                   'error': logging.ERROR,
@@ -117,7 +118,9 @@ def main():
     elif args.m == 'as-prenotice':
         autoship_prenotice()
     elif args.m == 'cart-abandon-20m':
-        cart_abandon()
+        cart_abandon_20m()
+    elif args.m == 'cart-abandon-24h':
+        cart_abandon_24h()
     elif args.m == 'backorder':
         backorder_notice()
 
@@ -226,10 +229,31 @@ def order_conf():
             logging.debug("Mail already sent. Skipping.")
 
 
-def cart_abandon():
+def cart_abandon_20m():
     """ Cart Abandonment Email """
-    # TODO get abandoned carts from Pinnacle
-    # See Pinnacle ticket IIM-445881
+    client = PinnacleClient()
+    carts = client.get_abandoned_carts()
+    config = SafeConfigParser()
+    config.read('config.ini')
+    req = create_request()
+    req.email = 'mark.richman@nutrihealth.com'
+    req.encrypt = config.get("emailvision", "cart_abandon_key")
+    req.notificationId = TEMPLATES["TEST-Drift-Trigger1"]
+    req.random = RANDOMTAGS["TEST-Drift-Trigger1"]
+    req.senddate = strftime("%Y-%m-%dT%H:%M:%S")  # '1980-01-01T00:00:00'
+    req.synchrotype = 'NOTHING'
+    req.uidkey = 'email'
+    if not was_mail_sent(req.email, req.notificationId):
+        res = send_object(req)
+        logging.debug(res)
+        record_sent_mail(req.email, req.notificationId)
+    else:
+        logging.debug("Mail already sent. Skipping.")
+
+def cart_abandon_24h():
+    """ Cart Abandonment Email """
+    client = PinnacleClient()
+    carts = client.get_abandoned_carts()
     config = SafeConfigParser()
     config.read('config.ini')
     req = create_request()
