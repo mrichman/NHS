@@ -19,7 +19,7 @@ TEMPLATES = {"[EMV] Test": 15367,
              "Autoship-Prenotice": 1536856,
              "Backorder-Notice": 1536855}
 
-RANDOMTAGS = {"[EMV] Test": 'FA6100040001FF8C',
+RANDOM_TAGS = {"[EMV] Test": 'FA6100040001FF8C',
               "Trigger_OrderShipment1": '952110747E020009',
               "Trigger_OrderAckknowledge1": '9D1F8080000474AA',
               "TEST-Drift-Trigger1": '608D795E7C020060',
@@ -32,10 +32,12 @@ class EmailVisionClient(object):
     def __init__(self):
         pass
 
-    def create_request(self):
+    def create_request(self, mailing_name):
         """ Creates EmailVision SOAP Request Client """
         client = Client(WSDL_URL)
         req = client.factory.create('sendRequest')
+        req.notificationId = TEMPLATES[mailing_name]
+        req.random = RANDOM_TAGS[mailing_name]
         req.senddate = strftime("%Y-%m-%dT%H:%M:%S")  # '1980-01-01T00:00:00'
         req.synchrotype = 'NOTHING'
         req.uidkey = 'email'

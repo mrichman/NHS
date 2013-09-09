@@ -16,14 +16,13 @@ to EmailVision:
 * Customer Feedback survey
 * Shopping Cart Abandonment Email 20-minute delay
 * Shopping Cart Abandonment Email 24-hour delay
-
 """
 
 import argparse
 import logging
 import sqlite3
 from ConfigParser import SafeConfigParser, Error
-from emailvision import EmailVisionClient, TEMPLATES, RANDOMTAGS
+from emailvision import EmailVisionClient
 from mom import MOMClient, Order
 from pinnacle import PinnacleClient
 
@@ -70,9 +69,9 @@ def main():
     logging.getLogger().setLevel(logging_level)
     logging.getLogger('suds.client').setLevel(logging_level)
     # console handler with specified log level
-    ch = logging.StreamHandler()
-    ch.setLevel(logging_level)
-    logging.getLogger().addHandler(ch)
+    console_handler = logging.StreamHandler()
+    console_handler.setLevel(logging_level)
+    logging.getLogger().addHandler(console_handler)
 
     setup_sqlite()
 
@@ -95,9 +94,9 @@ def main():
 def test_email():
     """ Send test email """
     order = Order()
-    order.first_name = 'Jan'
-    order.last_name = 'Alexander'
-    order.email = 'jealexander6861@gmail.com'
+    order.first_name = 'John'
+    order.last_name = 'Doe'
+    order.email = 'john.doe@example.com'
     order.sku = '10400'
     order.description = 'Flora Source 60 ct'
     order.cust_num = 5173525
@@ -106,7 +105,7 @@ def test_email():
     order.qty = 3
     order.total = 99.00
     order.tax = 0.00
-    req = EmailVisionClient().create_request()
+    req = EmailVisionClient().create_request("Trigger_OrderAckknowledge1")
     req.dyn = [
         {
             'entry': [
@@ -125,8 +124,6 @@ def test_email():
     config = SafeConfigParser()
     config.read('config.ini')
     req.encrypt = config.get("emailvision", "order_conf_key")
-    req.notificationId = TEMPLATES["Trigger_OrderAckknowledge1"]
-    req.random = RANDOMTAGS["Trigger_OrderAckknowledge1"]
     if not was_mail_sent(req.email, req.notificationId):
         res = EmailVisionClient().send_object(req)
         logging.debug(res)
@@ -137,13 +134,11 @@ def test_email():
 
 def ship_confirmation():
     """ Ship Confirmation Email """
-    req = EmailVisionClient().create_request()
+    req = EmailVisionClient().create_request("Trigger_OrderShipment1")
     req.email = 'mark.richman@nutrihealth.com'
     config = SafeConfigParser()
     config.read('config.ini')
     req.encrypt = config.get("emailvision", "ship_conf_key")
-    req.notificationId = TEMPLATES["Trigger_OrderShipment1"]
-    req.random = RANDOMTAGS["Trigger_OrderShipment1"]
     if not was_mail_sent(req.email, req.notificationId):
         res = EmailVisionClient().send_object(req)
         logging.debug(res)
@@ -157,7 +152,7 @@ def order_conf():
     orders = get_new_orders()
     logging.info("Got %d orders from MOM." % len(orders))
     for order in orders:
-        req = EmailVisionClient().create_request()
+        req = EmailVisionClient().create_request("Trigger_OrderAckknowledge1")
         req.dyn = [
             {
                 'entry': [
@@ -177,8 +172,6 @@ def order_conf():
         config = SafeConfigParser()
         config.read('config.ini')
         req.encrypt = config.get("emailvision", "order_conf_key")
-        req.notificationId = TEMPLATES["Trigger_OrderAckknowledge1"]
-        req.random = RANDOMTAGS["Trigger_OrderAckknowledge1"]
         if not was_mail_sent(req.email, req.notificationId, order.order_num):
             res = EmailVisionClient().send_object(req)
             logging.debug(res)
@@ -193,11 +186,9 @@ def cart_abandon_20m():
     carts = client.get_abandoned_carts()
     config = SafeConfigParser()
     config.read('config.ini')
-    req = EmailVisionClient().create_request()
+    req = EmailVisionClient().create_request("TEST-Drift-Trigger1")
     req.email = 'mark.richman@nutrihealth.com'
     req.encrypt = config.get("emailvision", "cart_abandon_key")
-    req.notificationId = TEMPLATES["TEST-Drift-Trigger1"]
-    req.random = RANDOMTAGS["TEST-Drift-Trigger1"]
     if not was_mail_sent(req.email, req.notificationId):
         res = EmailVisionClient().send_object(req)
         logging.debug(res)
@@ -212,11 +203,9 @@ def cart_abandon_24h():
     carts = client.get_abandoned_carts()
     config = SafeConfigParser()
     config.read('config.ini')
-    req = EmailVisionClient().create_request()
+    req = EmailVisionClient().create_request("TEST-Drift-Trigger1")
     req.email = 'mark.richman@nutrihealth.com'
     req.encrypt = config.get("emailvision", "cart_abandon_key")
-    req.notificationId = TEMPLATES["TEST-Drift-Trigger1"]
-    req.random = RANDOMTAGS["TEST-Drift-Trigger1"]
     if not was_mail_sent(req.email, req.notificationId):
         res = EmailVisionClient().send_object(req)
         logging.debug(res)
@@ -249,11 +238,9 @@ def autoship_prenotice():
         req.email = 'mark.richman@nutrihealth.com'
         config = SafeConfigParser()
         config.read('config.ini')
-        req = EmailVisionClient().create_request()
+        req = EmailVisionClient().create_request("Autoship-Prenotice")
         req.email = 'mark.richman@nutrihealth.com'
         req.encrypt = config.get("emailvision", "as_prenotice_key")
-        req.notificationId = TEMPLATES["Autoship-Prenotice"]
-        req.random = RANDOMTAGS["Autoship-Prenotice"]
         if not was_mail_sent(req.email, req.notificationId, order.order_num):
             res = EmailVisionClient().send_object(req)
             logging.debug(res)
@@ -268,11 +255,9 @@ def backorder_notice():
     # TODO iterate through orders and generate emails
     config = SafeConfigParser()
     config.read('config.ini')
-    req = EmailVisionClient().create_request()
+    req = EmailVisionClient().create_request("Backorder-Notice")
     req.email = 'mark.richman@nutrihealth.com'
     req.encrypt = config.get("emailvision", "backorder_notice_key")
-    req.notificationId = TEMPLATES["Backorder-Notice"]
-    req.random = RANDOMTAGS["Backorder-Notice"]
     if not was_mail_sent(req.email, req.notificationId):
         res = EmailVisionClient().send_object(req)
         logging.debug(res)
