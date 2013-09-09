@@ -21,7 +21,7 @@ to EmailVision:
 import argparse
 import logging
 import sqlite3
-from ConfigParser import SafeConfigParser, Error
+from ConfigParser import SafeConfigParser
 from emailvision import EmailVisionClient
 from mom import MOMClient, Order
 from pinnacle import PinnacleClient
@@ -149,7 +149,7 @@ def ship_confirmation():
 
 def order_conf():
     """ Order Confirmation Email """
-    orders = get_new_orders()
+    orders = MOMClient().get_new_orders()
     logging.info("Got %d orders from MOM." % len(orders))
     for order in orders:
         req = EmailVisionClient().create_request("Trigger_OrderAckknowledge1")
@@ -216,10 +216,10 @@ def cart_abandon_24h():
 
 def autoship_prenotice():
     """ Autoship Prenotice Email """
-    orders = get_upcoming_autoship_orders()
+    orders = MOMClient().get_upcoming_autoship_orders()
     logging.info("Got %d orders from MOM." % len(orders))
     for order in orders:
-        req = EmailVisionClient().create_request()
+        req = EmailVisionClient().create_request("Autoship-Prenotice")
         req.dyn = [
             {
                 'entry': [
@@ -238,7 +238,6 @@ def autoship_prenotice():
         req.email = 'mark.richman@nutrihealth.com'
         config = SafeConfigParser()
         config.read('config.ini')
-        req = EmailVisionClient().create_request("Autoship-Prenotice")
         req.email = 'mark.richman@nutrihealth.com'
         req.encrypt = config.get("emailvision", "as_prenotice_key")
         if not was_mail_sent(req.email, req.notificationId, order.order_num):
@@ -251,7 +250,7 @@ def autoship_prenotice():
 
 def backorder_notice():
     """ Backorder Notice Email """
-    orders = get_backorders()
+    orders = MOMClient().get_backorders()
     # TODO iterate through orders and generate emails
     config = SafeConfigParser()
     config.read('config.ini')
@@ -264,57 +263,6 @@ def backorder_notice():
         record_sent_mail(req.email, req.notificationId)
     else:
         logging.debug("Mail already sent. Skipping.")
-
-
-def get_upcoming_autoship_orders():
-    """ Gets upcoming Autoship orders for prenotice email """
-    orders = []
-    try:
-        mom = MOMClient()
-        conn = mom.get_mom_connection()
-        cur = conn.cursor()
-        cur.callproc("GetAutoShipPreNotice")
-        for row in cur:
-            logging.debug("CUSTNUM=%d, FIRSTNAME=%s" % (
-                row['CUSTNUM'], row['FIRSTNAME']))
-            order = Order(row)
-            orders.append(order)
-        conn.close()
-    except Error as error:
-        logging.error(error.message)
-        exit(error.message)
-    return orders
-
-
-def get_backorders():
-    """ Gets backorders for notice email """
-    # TODO get_backorders
-    orders = []
-    order = Order()
-    orders.append(order)
-    return orders
-
-
-def get_new_orders():
-    """
-    Get new orders from MOM by calling sproc "Emailer_GetNewOrders"
-    """
-    orders = []
-    try:
-        mom = MOMClient()
-        conn = mom.get_mom_connection()
-        cur = conn.cursor()
-        cur.callproc("Emailer_GetNewOrders")
-        for row in cur:
-            logging.debug("CUSTNUM=%d, FIRSTNAME=%s" % (
-                row['CUSTNUM'], row['FIRSTNAME']))
-            order = Order(row)
-            orders.append(order)
-        conn.close()
-    except Error as error:
-        logging.error(error.message)
-        exit(error.message)
-    return orders
 
 
 def setup_sqlite():

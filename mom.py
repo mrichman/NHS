@@ -45,6 +45,52 @@ class MOMClient(object):
             logging.error(error.message)
             exit(error.message)
 
+    def get_new_orders(self):
+        """
+        Get new orders from MOM by calling sproc "Emailer_GetNewOrders"
+        """
+        orders = []
+        try:
+            conn = self.get_mom_connection()
+            cur = conn.cursor()
+            cur.callproc("Emailer_GetNewOrders")
+            for row in cur:
+                logging.debug("CUSTNUM=%d, FIRSTNAME=%s" % (
+                    row['CUSTNUM'], row['FIRSTNAME']))
+                order = Order(row)
+                orders.append(order)
+            conn.close()
+        except Error as error:
+            logging.error(error.message)
+            exit(error.message)
+        return orders
+
+    def get_upcoming_autoship_orders(self):
+        """ Gets upcoming Autoship orders for prenotice email """
+        orders = []
+        try:
+            conn = self.get_mom_connection()
+            cur = conn.cursor()
+            cur.callproc("GetAutoShipPreNotice")
+            for row in cur:
+                logging.debug("CUSTNUM=%d, FIRSTNAME=%s" % (
+                    row['CUSTNUM'], row['FIRSTNAME']))
+                order = Order(row)
+                orders.append(order)
+            conn.close()
+        except Error as error:
+            logging.error(error.message)
+            exit(error.message)
+        return orders
+
+    def get_backorders(self):
+        """ Gets backorders for notice email """
+        # TODO get_backorders
+        orders = []
+        order = Order()
+        orders.append(order)
+        return orders
+
 
 class Order(object):
     """ Order """
@@ -152,3 +198,6 @@ class OrderItem(object):
              "  </tr>")
         logging.debug(s)
         return s
+
+if __name__ == '__main__':
+    pass
