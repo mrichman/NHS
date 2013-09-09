@@ -23,7 +23,7 @@ class PinnacleClient(object):
         except Error:
             msg = "config.ini file bad or missing"
             logging.error(msg)
-            exit(msg)
+            raise Exception(msg)
         try:
             self.pcapi_username = config.get("pcapi", "username")
             self.pcapi_password = config.get("pcapi", "password")

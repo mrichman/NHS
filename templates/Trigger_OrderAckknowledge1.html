@@ -1,49 +1,106 @@
 [EMV HTMLPART]
-
 <!DOCTYPE HTML>
 <html>
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 <title>Thank You for your order!</title>
 </head>
-
 <body>
-
 <table width="550" style="text-align: left">
 <tr>
 <td style="margin: auto; width: 550px; padding:15px; overflow: auto; border: solid 1px #ababab">
 <h2 align="left"> Dear [EMV DYN]FIRSTNAME[EMV /DYN],</h2>
 
 <p>At Nutri-Health Supplements, we sincerely value your business. We're here to make sure you always have a positive experience, with each and every purchase you make. We have received your order and it is currently being processed. Details of your order are as follows:</p>
-<p>&nbsp;</p>
+
+<p><strong>Order #:</strong>[EMV DYN]ORDERNUM[EMV /DYN]</p>
+
+<table>
+<tr>
+<td width="63"><strong>Bill To:</strong></td><td width="475">[EMV DYN]FIRSTNAME[EMV /DYN]&nbsp;[EMV DYN]LASTNAME[EMV /DYN]</td>
+</tr>
+<tr>
+<td></td><td>[EMV DYN]BILLING_ADDRESS1[EMV /DYN]</td>
+</tr>
+<tr>
+<td></td><td>[EMV DYN]BILLING_ADDRESS2[EMV /DYN]</td>
+</tr>
+<tr>
+<td></td><td>[EMV DYN]BILLING_CITY[EMV /DYN],&nbsp;[EMV DYN]BILLING_STATE[EMV /DYN]&nbsp;[EMV DYN]BILLING_ZIP[EMV /DYN]</td>
+</tr>
+</table>
+
+<p><strong>Payment:</strong>[EMV DYN]PAYMENT[EMV /DYN]&nbsp;Card ending in: [EMV DYN]LAST4[EMV /DYN]</p>
+
+<p><strong>Promotion Code:</strong>[EMV DYN]SOURCEKEY[EMV /DYN]</p>
+
 <p>
-  <table>
+<table width="100%">
     <tr>
-      <th>Item Number</th>
-      <th>Product Name</th>
-      <th>Qty</th>
-      <th>Price</th>
-      <th>Total</th>
+        <th width="25%">Item Number</th>
+        <th width="25%">Product Name</th>
+        <th width="16%">Qty</th>
+        <th width="16%">Price</th>
+        <th width="17%">Total</th>
     </tr>
     [EMV CONTENT]1[EMV /CONTENT]
-  </table>
+</table>
 </p>
+
+<p>
+<table width="100%">
+    <tr><td width="80%" align="right">Subtotal Amount:</td><td width="20%">[EMV DYN]SUBTOTAL_AMT[EMV /DYN]</td></tr>
+    <tr>
+      <td align="right">Discount:</td>
+      <td>[EMV DYN]DISCOUNT[EMV /DYN]</td></tr>
+    <tr>
+      <td align="right">Promo Code Discount:</td>
+      <td>[EMV DYN]PROMOCODE_DISCOUNT[EMV /DYN]</td></tr>
+    <tr>
+      <td align="right">Shipping Fee (Promo - Free Standard Shipping (7-10 business days)):</td>
+      <td>[EMV DYN]SHIPPING_FEE[EMV /DYN]</td></tr>
+    <tr>
+      <td align="right">Tax Amount:</td>
+      <td>[EMV DYN]TAX_AMOUNT[EMV /DYN]</td></tr>
+    <tr>
+      <td align="right"><strong>Current Total:</strong></td><td>[EMV DYN]TOTAL[EMV /DYN]</td></tr>
+</table>
+<p>
+<table width="100%">
+<tr>
+<td width="63"><strong>Ship To:</strong></td><td width="475">[EMV DYN]FIRSTNAME[EMV /DYN]&nbsp;[EMV DYN]LASTNAME[EMV /DYN]</td>
+</tr>
+<tr>
+<td></td><td>[EMV DYN]SHIPPING_ADDRESS1[EMV /DYN]</td>
+</tr>
+<tr>
+<td></td><td>[EMV DYN]SHIPPING_ADDRESS2[EMV /DYN]</td>
+</tr>
+<tr>
+<td></td><td>[EMV DYN]SHIPPING_CITY[EMV /DYN],&nbsp;[EMV DYN]SHIPPING_STATE[EMV /DYN]&nbsp;[EMV DYN]SHIPPING_ZIP[EMV /DYN]</td>
+</tr>
+</table>
+</p>
+
 <p>As soon as your order ships, you'll receive an email with all your shipping details and a tracking number, so you'll know exactly when to expect your package to arrive at your door.</p>
-<p> Please remember: we want to hear from you!&nbsp; Don't hesitate to send questions, make suggestions, or simply let us know how we're doing. And once you receive your order, be sure to let us know how our supplements are working for you &#8211; we want the next success story to be yours!</p>
+<p><strong>Special Thank You Offer<br>
+</strong><br>
+As a special thank you we'd like to give you the opportunity to try other regularly priced Nutri-Health products for 20% off.  If you hurry and place your order quickly enough we can ship your additional products in the same package so you don't have to pay for shipping.  Please hurry though, our order processing and shipping department is pretty fast.<br>
+
+<p align="center">
+USE PROMO CODE: <strong>THANKS20</strong><br>
+[SHOP NOW] Button</p>
 <p>If there is anything you need, please call our customer care team at 1-800-914-6311, or email us at <a href="mailto:info@nutri-health.com">info@nutri-health.com</a>.</p>
-<p>We stand by the quality of our products 100%, so every purchase you make is risk-free. If for any reason you're not completely satisfied, let us know so we can make it right.&nbsp;</p>
-<p>&nbsp; </p>
+<p>We stand by the quality of our products 100%, so every purchase you make is risk-free. If for any reason you're not completely satisfied, let us know so we can make it right.&nbsp; </p>
 <p><a href="[EMV LINK]2[EMV /LINK]"><img src="http://www.nutri-health.com/images/custom/NH_WebGuaranteeSeal_1.gif" alt="NHguarantee" name="guarantee" width="125" height="125" border="0" align="right" id="guarantee" style="margin-left:10px"/></a>Every order is backed by our 100% Money-Back Guarantee and you always have a full 180 days to try any product and return it, no questions asked.</p>
 <p>&nbsp;</p>
 <p>Thank you again for your business!</p>
 <p>&nbsp; </p>
 <p>To Your Better Health!<br />
   Sincerely,<br />
-  Jenn McTurk,<br />
-  Customer Care Director</p>
-<p>&nbsp;</p>
-<p><strong>P.S</strong>. Be sure to visit <a href="[EMV LINK]3[EMV /LINK]">www.nutri-health.com</a> to explore our entire catalog of premium supplements. You'll also find web-only specials, money-saving offers and exclusive health information &#8211; only from Nutri-Health! </p><p>&nbsp;</p>
- <p align="left"><img src="http://www.nutri-health.com/content/cache/skins/NutriHealth0312/images/image-logo.png" width="223" height="69" alt="Nutri-Health Supplements" /></p>
+  The Nutri-Health Supplements Team</p>
+<p><strong>P.S.</strong> Did you know you could save 25% off your favorite Nutri-Health Supplement by using Healthy Lifestyle Savings?  Healthy Lifestyle Savings allows you to get your favorite supplement of choice on a regular basis in whatever frequency you choose with free shipping!  Best of all you can pause or cancel your Healthy Lifestyle Savings program at any time. </p>
+<p align="left"><img src="http://www.nutri-health.com/content/cache/skins/NutriHealth0312/images/image-logo.png" width="223" height="69" alt="Nutri-Health Supplements" /></p>
 <h4 align="left">Nutri-Health Supplements - Your Every Day Premium Health Source</h4>
 
 

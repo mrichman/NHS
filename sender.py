@@ -105,11 +105,54 @@ def test_email():
     order.qty = 3
     order.total = 99.00
     order.tax = 0.00
+    order.subtotal = 99.00
+    order.billing_address1 = '123 Main St.'
+    order.billing_address2 = 'Suite 100'
+    order.billing_city = 'Anytown'
+    order.billing_state = 'XY'
+    order.billing_zip = '54321'
+    order.expect_ship = '9/12/2013'
+    order.payment_last4 = '9876'
+    order.payment_type = 'Visa'
+    order.promocode_discount = 0.00
+    order.ship_type = 'USPS'
+    order.shipping_address1 = '123 Main St.'
+    order.shipping_address2 = 'Suite 100'
+    order.shipping_city = 'Anytown'
+    order.shipping_state = 'XY'
+    order.shipping_zip = '54321'
+    order.source_key = 'THANKS20'
     req = EmailVisionClient().create_request("Trigger_OrderAckknowledge1")
     req.dyn = [
         {
             'entry': [
-                {"key": 'FIRSTNAME', 'value': order.first_name}
+                {"key": "billing_address1",
+                 "value": order.billing_address1},
+                {"key": "billing_address2",
+                 "value": order.billing_address2},
+                {"key": "billing_city", "value": order.billing_city},
+                {"key": "billing_state", "value": order.billing_state},
+                {"key": "billing_zip", "value": order.billing_zip},
+                {"key": "discount", "value": order.discount},
+                {"key": "firstname", "value": order.first_name},
+                {"key": "last4", "value": order.payment_last4},
+                {"key": "lastname", "value": order.last_name},
+                {"key": "ordernum", "value": order.order_num},
+                {"key": "payment", "value": order.payment_type},
+                {"key": "promocode_discount",
+                 "value": order.promocode_discount},
+                {"key": "shipping_address1",
+                 "value": order.shipping_address1},
+                {"key": "shipping_address2",
+                 "value": order.shipping_address2},
+                {"key": "shipping_city", "value": order.shipping_city},
+                {"key": "shipping_fee", "value": order.shipping_fee},
+                {"key": "shipping_state", "value": order.shipping_state},
+                {"key": "shipping_zip", "value": order.shipping_zip},
+                {"key": "sourcekey", "value": order.source_key},
+                {"key": "subtotal_amt", "value": order.subtotal},
+                {"key": "tax_amount", "value": order.tax},
+                {"key": "total", "value": order.total}
             ]
         }
     ]
@@ -156,7 +199,33 @@ def order_conf():
         req.dyn = [
             {
                 'entry': [
-                    {"key": 'FIRSTNAME', 'value': order.first_name}
+                    {"key": "billing_address1",
+                     "value": order.billing_address1},
+                    {"key": "billing_address2",
+                     "value": order.billing_address2},
+                    {"key": "billing_city", "value": order.billing_city},
+                    {"key": "billing_state", "value": order.billing_state},
+                    {"key": "billing_zip", "value": order.billing_zip},
+                    {"key": "discount", "value": order.discount},
+                    {"key": "firstname", "value": order.first_name},
+                    {"key": "last4", "value": order.payment_last4},
+                    {"key": "lastname", "value": order.last_name},
+                    {"key": "ordernum", "value": order.order_num},
+                    {"key": "payment", "value": order.payment_type},
+                    {"key": "promocode_discount",
+                     "value": order.promocode_discount},
+                    {"key": "shipping_address1",
+                     "value": order.shipping_address1},
+                    {"key": "shipping_address2",
+                     "value": order.shipping_address2},
+                    {"key": "shipping_city", "value": order.shipping_city},
+                    {"key": "shipping_fee", "value": order.shipping_fee},
+                    {"key": "shipping_state", "value": order.shipping_state},
+                    {"key": "shipping_zip", "value": order.shipping_zip},
+                    {"key": "sourcekey", "value": order.source_key},
+                    {"key": "subtotal_amt", "value": order.subtotal},
+                    {"key": "tax_amount", "value": order.tax},
+                    {"key": "total", "value": order.total}
                 ]
             }
         ]
@@ -223,7 +292,33 @@ def autoship_prenotice():
         req.dyn = [
             {
                 'entry': [
-                    {"key": 'FIRSTNAME', 'value': order.first_name}
+                    {"key": "billing_address1",
+                     "value": order.billing_address1},
+                    {"key": "billing_address2",
+                     "value": order.billing_address2},
+                    {"key": "billing_city", "value": order.billing_city},
+                    {"key": "billing_state", "value": order.billing_state},
+                    {"key": "billing_zip", "value": order.billing_zip},
+                    {"key": "discount", "value": order.discount},
+                    {"key": "firstname", "value": order.first_name},
+                    {"key": "last4", "value": order.payment_last4},
+                    {"key": "lastname", "value": order.last_name},
+                    {"key": "ordernum", "value": order.order_num},
+                    {"key": "payment", "value": order.payment_type},
+                    {"key": "promocode_discount",
+                     "value": order.promocode_discount},
+                    {"key": "shipping_address1",
+                     "value": order.shipping_address1},
+                    {"key": "shipping_address2",
+                     "value": order.shipping_address2},
+                    {"key": "shipping_city", "value": order.shipping_city},
+                    {"key": "shipping_fee", "value": order.shipping_fee},
+                    {"key": "shipping_state", "value": order.shipping_state},
+                    {"key": "shipping_zip", "value": order.shipping_zip},
+                    {"key": "sourcekey", "value": order.source_key},
+                    {"key": "subtotal_amt", "value": order.subtotal},
+                    {"key": "tax_amount", "value": order.tax},
+                    {"key": "total", "value": order.total}
                 ]
             }
         ]

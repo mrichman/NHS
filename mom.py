@@ -29,7 +29,7 @@ class MOMClient(object):
         except Error as error:
             msg = "Config section [momdb] bad or missing: %s" % error.message
             logging.error(msg)
-            exit(msg)
+            raise Exception(msg)
 
         try:
             logging.info('Connecting to MOM...')
@@ -40,10 +40,10 @@ class MOMClient(object):
         except InterfaceError as error:
             msg = "Error connecting to SQL Server: %s" % error.message
             logging.error(msg)
-            exit(msg)
+            raise Exception(msg)
         except Error as error:
             logging.error(error.message)
-            exit(error.message)
+            raise
 
     def get_new_orders(self):
         """
@@ -62,7 +62,7 @@ class MOMClient(object):
             conn.close()
         except Error as error:
             logging.error(error.message)
-            exit(error.message)
+            raise
         return orders
 
     def get_upcoming_autoship_orders(self):
@@ -80,7 +80,7 @@ class MOMClient(object):
             conn.close()
         except Error as error:
             logging.error(error.message)
-            exit(error.message)
+            raise
         return orders
 
     def get_backorders(self):
@@ -102,15 +102,30 @@ class Order(object):
             self.last_name = ''
             self.email = ''
             self.expect_ship = date.today()
+            self.billing_address1 = ''
+            self.billing_address2 = ''
+            self.billing_city = ''
+            self.billing_state = ''
+            self.billing_zip = ''
+            self.discount = 0.00
+            self.payment_type = ''
+            self.payment_last4 = ''
             self.sku = ''
             self.description = ''
             self.list_price = ''
             self.unit_price = ''
             self.ext_price = ''
             self.qty = 0
-            self.tax = 0
-            self.shipping = 0
-            self.total = 0
+            self.tax = 0.00
+            self.shipping_fee = 0.00
+            self.subtotal = 0.00
+            self.total = 0.00
+            self.promocode_discount = 0.00
+            self.shipping_address1 = ''
+            self.shipping_address2 = ''
+            self.shipping_city = ''
+            self.shipping_state = ''
+            self.shipping_zip = ''
             self.ship_type = ''
             self.tracking_num = ''
             self.tracking_url = ''
@@ -123,6 +138,14 @@ class Order(object):
             self.last_name = row['LASTNAME']
             self.email = row['EMAIL']
             self.expect_ship = row['NEXT_SHIP']
+            self.billing_address1 = ''
+            self.billing_address2 = ''
+            self.billing_city = ''
+            self.billing_state = ''
+            self.billing_zip = ''
+            self.discount = 0.00
+            self.payment_type = ''
+            self.payment_last4 = ''
             self.sku = row['ITEM']
             self.description = row['DESC1']
             self.list_price = row.get('IT_UNLIST', 0)
@@ -130,8 +153,15 @@ class Order(object):
             self.ext_price = ''
             self.qty = row['QUANTO']
             self.tax = row.get('TAX', 0)
-            self.shipping = row.get('SHIPPING', 0)
+            self.shipping_fee = row.get('SHIPPING', 0)
+            self.subtotal = row.get('ORD_TOTAL', 0)
             self.total = row.get('ORD_TOTAL', 0)
+            self.promocode_discount = 0.00
+            self.shipping_address1 = ''
+            self.shipping_address2 = ''
+            self.shipping_city = ''
+            self.shipping_state = ''
+            self.shipping_zip = ''
             self.ship_type = ''
             self.tracking_num = ''
             self.tracking_url = ''
