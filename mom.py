@@ -67,7 +67,7 @@ class MOMClient(object):
 
     def get_upcoming_autoship_orders(self):
         """ Gets upcoming Autoship orders for prenotice email """
-        orders = []
+        orders_dict = {}
         try:
             conn = self.get_mom_connection()
             cur = conn.cursor()
@@ -76,12 +76,30 @@ class MOMClient(object):
                 logging.debug("CUSTNUM=%d, FIRSTNAME=%s" % (
                     row['CUSTNUM'], row['FIRSTNAME']))
                 order = Order(row)
-                orders.append(order)
+                if order in orders_dict:
+                    orders_dict[order].append(order)
+                else:
+                    orders_dict[order] = [order]
+                # logging.info("Order %s" % orders_dict[order])
             conn.close()
         except Error as error:
             logging.error(error.message)
             raise
-        return orders
+
+        # normalize orders into Order->OrderItems
+        for orders in orders_dict:
+            # some orders have >1 "order" (line item)
+            for order in orders_dict[orders]:
+                order_item = OrderItem()
+                order_item.sku = order.sku
+                order_item.description = order.description
+                order_item.qty = order.qty
+                order_item.list_price = order.list_price
+                order_item.total = order.total
+                order.order_items.append(order_item)
+                logging.debug(order.html_table())
+
+        return orders_dict.keys()
 
     def get_backorders(self):
         """ Gets backorders for notice email """
@@ -132,7 +150,7 @@ class Order(object):
             self.source_key = ''
             self.order_items = []
         else:
-            self.order_num = row['ORDERNO']
+            self.order_num = int(row['ORDERNO'])
             self.cust_num = row['CUSTNUM']
             self.first_name = row['FIRSTNAME']
             self.last_name = row['LASTNAME']
@@ -168,17 +186,26 @@ class Order(object):
             self.source_key = row['SourceKey']
             self.order_items = []
 
+    def __hash__(self):
+        return hash(self.order_num)
+
+    def __eq__(self, other):
+        return self.order_num == other.order_num
+
     def html_table(self):
         """ Returns order as a collection of HTML rows """
-        s = ("  <tr>"
-             "    <td>" + self.sku + "</td>"
-             "    <td>" + self.description + "</td>"
-             "    <td>" + str(self.qty) + "</td>"
-             "    <td>" + "%0.2f" % self.list_price + "</td>"
-             "    <td>" + str(self.total) + "</td>"
-             "  </tr>")
-        logging.debug(s)
-        return s
+        table = ""
+        for order_item in self.order_items:
+            table += (
+                "  <tr>"
+                "    <td>" + order_item.sku + "</td>"
+                "    <td>" + order_item.description + "</td>"
+                "    <td>" + str(order_item.qty) + "</td>"
+                "    <td>" + "%0.2f" % order_item.list_price + "</td>"
+                "    <td>" + str(order_item.total) + "</td>"
+                "  </tr>")
+        logging.debug(table)
+        return table
 
 
 class OrderItem(object):
