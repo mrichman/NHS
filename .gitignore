@@ -54,6 +54,7 @@ config.ini
 .idea/vcs.xml
 .idea/dataSources.xml
 .idea/dataSources.ids
+.idea/sqldialects.xml
 
 # SQLite
 *.db

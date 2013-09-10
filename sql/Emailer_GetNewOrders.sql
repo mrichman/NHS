@@ -1,0 +1,58 @@
+USE [Mom-Nutri-Health]
+GO
+
+/****** Object:  StoredProcedure [dbo].[Emailer_GetNewOrders]    Script Date: 09/10/2013 13:16:08 ******/
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+-- =============================================
+-- Author:		Mark Richman
+-- Create date: 9/10/2013
+-- Description:	EmailVision Order Confirmation
+-- Example:     exec Emailer_GetNewOrders
+-- =============================================
+CREATE PROCEDURE [dbo].[Emailer_GetNewOrders]
+	-- Add the parameters for the stored procedure here
+
+AS
+BEGIN
+
+	SELECT CMS.ORDERNO, CMS.CUSTNUM, CUST.FIRSTNAME, CUST.LASTNAME, CUST.EMAIL, ITEMS.ITEM,
+		CAST(ITEMS.QUANTO AS INT) AS QUANTO, ItemInfo.DESC1,
+		ItemInfo.DESC2, ISNULL(ITEMS.SHIP_WHEN, DATEADD(d, 1, GETDATE())) AS NEXT_SHIP,
+		((ITEMS.IT_UNLIST) - ((ITEMS.IT_UNLIST) * (ITEMS.DISCOUNT / 100))) AS IT_UNLIST,
+		CMS.TAX, CMS.SHIPPING, CMS.ORD_TOTAL,
+		'' AS SourceKey, CMS.ODR_DATE, CUST.ADDR, CUST.ADDR2, CUST.CITY, CUST.STATE,
+		CUST.ZIPCODE
+FROM CMS (NOLOCK)
+	INNER JOIN ITEMS (NOLOCK) ON CMS.ORDERNO = ITEMS.ORDERNO
+	INNER JOIN CUST (NOLOCK) ON CMS.CUSTNUM = CUST.CUSTNUM
+	INNER JOIN (SELECT DISTINCT NUMBER, DESC1, DESC2
+		FROM STOCK (NOLOCK)) AS ItemInfo ON ITEMS.ITEM = ItemInfo.NUMBER
+WHERE 1=1 -- (CUST.NOEMAIL = 0)
+	AND (CMS.ODR_DATE BETWEEN DATEADD(d, -2, GETDATE()) AND GETDATE())
+	AND (ITEMS.IT_UNCOST > 0)
+	AND ((ITEMS.NONPRODUCT = 0) OR (ITEMS.IT_UNLIST <> 0))
+	AND (CUST.EMAIL <> '')
+	AND NOT (CMS.ORDERNO IN (SELECT LAST_ORDER FROM CLUBSUBS (NOLOCK)))
+	-- AND (PROCSSD = 0)
+	AND NOT (CUST.EMAIL LIKE '%amazon.com')
+	--AND
+	--  ((SELECT     COUNT(CUSTNUM) AS Expr1
+	--	  FROM         CONTACT (NOLOCK)
+	--	  WHERE     (CUSTNUM = CUST.CUSTNUM) AND (ORDNUM = CMS.ORDERNO)) = 0)
+	AND ((ITEMS.ITEM_STATE = 'CM') OR (ITEMS.ITEM_STATE = 'BO'))
+	AND NOT (CUST.CUSTNUM IN (SELECT DISTINCT CUSTNUM FROM CMS WHERE CL_KEY = 'AMAZON'))
+--	UNION
+--	SELECT   1745637, 'Mark', 'Richman', 'mark.richman@nutrihealth.com', 777, '10503', 3, 'AtrhroZyme Plus', 'Atrhrozyme Plus is cool', DATEADD(DD, 1, GETDATE()), 15 AS IT_UNLIST, 0, 3.95, 18.95,
+--					'' AS SourceKey
+	ORDER BY CMS.ORDERNO, ITEMS.QUANTO DESC, ITEMS.IT_UNLIST DESC
+
+
+END
+
+GO
+

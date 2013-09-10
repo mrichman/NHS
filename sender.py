@@ -168,7 +168,7 @@ def test_email():
     config.read('config.ini')
     req.encrypt = config.get("emailvision", "order_conf_key")
     if not was_mail_sent(req.email, req.notificationId):
-        res = EmailVisionClient().send_object(req)
+        res = EmailVisionClient().send(req)
         logging.debug(res)
         record_sent_mail(req.email, req.notificationId)
     else:
@@ -183,7 +183,7 @@ def ship_confirmation():
     config.read('config.ini')
     req.encrypt = config.get("emailvision", "ship_conf_key")
     if not was_mail_sent(req.email, req.notificationId):
-        res = EmailVisionClient().send_object(req)
+        res = EmailVisionClient().send(req)
         logging.debug(res)
         record_sent_mail(req.email, req.notificationId)
     else:
@@ -242,7 +242,7 @@ def order_conf():
         config.read('config.ini')
         req.encrypt = config.get("emailvision", "order_conf_key")
         if not was_mail_sent(req.email, req.notificationId, order.order_num):
-            res = EmailVisionClient().send_object(req)
+            res = EmailVisionClient().send(req)
             logging.debug(res)
             record_sent_mail(req.email, req.notificationId, order.order_num)
         else:
@@ -259,7 +259,7 @@ def cart_abandon_20m():
     req.email = 'mark.richman@nutrihealth.com'
     req.encrypt = config.get("emailvision", "cart_abandon_key")
     if not was_mail_sent(req.email, req.notificationId):
-        res = EmailVisionClient().send_object(req)
+        res = EmailVisionClient().send(req)
         logging.debug(res)
         record_sent_mail(req.email, req.notificationId)
     else:
@@ -276,7 +276,7 @@ def cart_abandon_24h():
     req.email = 'mark.richman@nutrihealth.com'
     req.encrypt = config.get("emailvision", "cart_abandon_key")
     if not was_mail_sent(req.email, req.notificationId):
-        res = EmailVisionClient().send_object(req)
+        res = EmailVisionClient().send(req)
         logging.debug(res)
         record_sent_mail(req.email, req.notificationId)
     else:
@@ -307,6 +307,8 @@ def autoship_prenotice():
                     {"key": "payment", "value": order.payment_type},
                     {"key": "promocode_discount",
                      "value": order.promocode_discount},
+                    {"key": "shipdate",
+                     "value": order.expect_ship.strftime('%m/%d/%Y')},
                     {"key": "shipping_address1",
                      "value": order.shipping_address1},
                     {"key": "shipping_address2",
@@ -325,7 +327,7 @@ def autoship_prenotice():
         req.content = [
             {
                 'entry': [
-                    {'key': 1, 'value': order.html_table()}
+                    {'key': 1, 'value': order.html_table_autoship()}
                 ]
             }
         ]
@@ -336,7 +338,7 @@ def autoship_prenotice():
         req.email = 'mark.richman@nutrihealth.com'
         req.encrypt = config.get("emailvision", "as_prenotice_key")
         if not was_mail_sent(req.email, req.notificationId, order.order_num):
-            res = EmailVisionClient().send_object(req)
+            res = EmailVisionClient().send(req)
             logging.debug(res)
             record_sent_mail(req.email, req.notificationId, order.order_num)
         else:
@@ -353,7 +355,7 @@ def backorder_notice():
     req.email = 'mark.richman@nutrihealth.com'
     req.encrypt = config.get("emailvision", "backorder_notice_key")
     if not was_mail_sent(req.email, req.notificationId):
-        res = EmailVisionClient().send_object(req)
+        res = EmailVisionClient().send(req)
         logging.debug(res)
         record_sent_mail(req.email, req.notificationId)
     else:

@@ -35,12 +35,11 @@ RANDOM_TAGS = {
 class EmailVisionClient(object):
     """ EmailVision SOAP Client """
     def __init__(self):
-        pass
+        self.client = Client(WSDL_URL)
 
     def create_request(self, mailing_name):
         """ Creates EmailVision SOAP Request Client """
-        client = Client(WSDL_URL)
-        req = client.factory.create('sendRequest')
+        req = self.client.factory.create('sendRequest')
         req.notificationId = TEMPLATES[mailing_name]
         req.random = RANDOM_TAGS[mailing_name]
         req.senddate = strftime("%Y-%m-%dT%H:%M:%S")  # '1980-01-01T00:00:00'
@@ -48,11 +47,10 @@ class EmailVisionClient(object):
         req.uidkey = 'email'
         return req
 
-    def send_object(self, request):
+    def send(self, request):
         """ Sends SOAP Request """
         logging.info("Sending SOAP request...")
-        client = Client(WSDL_URL)
-        return client.service.sendObject(request)
+        return self.client.service.sendObject(request)
 
 if __name__ == '__main__':
     pass

@@ -8,6 +8,7 @@ MOM SQL Client
 from ConfigParser import SafeConfigParser, Error
 from datetime import date
 import logging
+import json
 from pymssql import connect, InterfaceError
 
 
@@ -49,7 +50,8 @@ class MOMClient(object):
         """
         Get new orders from MOM by calling sproc "Emailer_GetNewOrders"
         """
-        orders = []
+        orders_list = []
+        orders_dict = {}
         try:
             conn = self.get_mom_connection()
             cur = conn.cursor()
@@ -58,15 +60,42 @@ class MOMClient(object):
                 logging.debug("CUSTNUM=%d, FIRSTNAME=%s" % (
                     row['CUSTNUM'], row['FIRSTNAME']))
                 order = Order(row)
-                orders.append(order)
+                if order in orders_dict:
+                    orders_dict[order].append(order)
+                else:
+                    orders_dict[order] = [order]
             conn.close()
         except Error as error:
             logging.error(error.message)
             raise
-        return orders
+
+        # normalize orders into Order->OrderItems
+        for orders in orders_dict:
+            # some orders have >1 "order" (line item)
+            for order_line in orders_dict[orders]:
+                order_item = OrderItem()
+                order_item.sku = order_line.sku
+                order_item.description = order_line.description
+                order_item.qty = order_line.qty
+                order_item.list_price = order_line.list_price
+                order_item.total = order_line.list_price * order.qty
+                orders.order_items.append(order_item)
+                logging.info("Order %s\tItem %s" %
+                            (order_line.order_num, order_item.sku))
+
+        for order in orders_dict:
+            logging.info("Order %s has %d line items: %s" %
+                         (order.order_num,
+                          len(order.order_items),
+                          order.order_items))
+            orders_list.append(order)
+            logging.info(order.html_table())
+
+        return orders_list
 
     def get_upcoming_autoship_orders(self):
         """ Gets upcoming Autoship orders for prenotice email """
+        orders = []
         orders_dict = {}
         try:
             conn = self.get_mom_connection()
@@ -80,7 +109,6 @@ class MOMClient(object):
                     orders_dict[order].append(order)
                 else:
                     orders_dict[order] = [order]
-                # logging.info("Order %s" % orders_dict[order])
             conn.close()
         except Error as error:
             logging.error(error.message)
@@ -96,10 +124,17 @@ class MOMClient(object):
                 order_item.qty = order.qty
                 order_item.list_price = order.list_price
                 order_item.total = order.total
-                order.order_items.append(order_item)
-                logging.debug(order.html_table())
+                orders.order_items.append(order_item)
+                logging.debug("Order %s\tItem %s" % (order.order_num, order_item.sku))
 
-        return orders_dict.keys()
+        for order in orders_dict:
+            logging.info("Order %s has %d items: %s" %
+                         (order.order_num,
+                          len(order.order_items),
+                          order.order_items))
+            orders.append(order)
+
+        return orders
 
     def get_backorders(self):
         """ Gets backorders for notice email """
@@ -119,7 +154,7 @@ class Order(object):
             self.first_name = ''
             self.last_name = ''
             self.email = ''
-            self.expect_ship = date.today()
+            self.expect_ship = date.max
             self.billing_address1 = ''
             self.billing_address2 = ''
             self.billing_city = ''
@@ -127,13 +162,14 @@ class Order(object):
             self.billing_zip = ''
             self.discount = 0.00
             self.payment_type = ''
-            self.payment_last4 = ''
             self.sku = ''
             self.description = ''
             self.list_price = ''
             self.unit_price = ''
             self.ext_price = ''
+            self.order_date = date.min
             self.qty = 0
+            self.payment_last4 = ''
             self.tax = 0.00
             self.shipping_fee = 0.00
             self.subtotal = 0.00
@@ -156,11 +192,11 @@ class Order(object):
             self.last_name = row['LASTNAME']
             self.email = row['EMAIL']
             self.expect_ship = row['NEXT_SHIP']
-            self.billing_address1 = ''
-            self.billing_address2 = ''
-            self.billing_city = ''
-            self.billing_state = ''
-            self.billing_zip = ''
+            self.billing_address1 = row['ADDR']
+            self.billing_address2 = row['ADDR2']
+            self.billing_city = row['CITY']
+            self.billing_state = row['STATE']
+            self.billing_zip = row['ZIPCODE']
             self.discount = 0.00
             self.payment_type = ''
             self.payment_last4 = ''
@@ -169,17 +205,18 @@ class Order(object):
             self.list_price = row.get('IT_UNLIST', 0)
             self.unit_price = ''
             self.ext_price = ''
+            self.order_date = row['ODR_DATE']
             self.qty = row['QUANTO']
             self.tax = row.get('TAX', 0)
             self.shipping_fee = row.get('SHIPPING', 0)
             self.subtotal = row.get('ORD_TOTAL', 0)
             self.total = row.get('ORD_TOTAL', 0)
             self.promocode_discount = 0.00
-            self.shipping_address1 = ''
-            self.shipping_address2 = ''
-            self.shipping_city = ''
-            self.shipping_state = ''
-            self.shipping_zip = ''
+            self.shipping_address1 = row['ADDR']
+            self.shipping_address2 = row['ADDR2']
+            self.shipping_city = row['CITY']
+            self.shipping_state = row['STATE']
+            self.shipping_zip = row['ZIPCODE']
             self.ship_type = ''
             self.tracking_num = ''
             self.tracking_url = ''
@@ -201,8 +238,23 @@ class Order(object):
                 "    <td>" + order_item.sku + "</td>"
                 "    <td>" + order_item.description + "</td>"
                 "    <td>" + str(order_item.qty) + "</td>"
-                "    <td>" + "%0.2f" % order_item.list_price + "</td>"
-                "    <td>" + str(order_item.total) + "</td>"
+                "    <td>" + "$%0.2f" % order_item.list_price + "</td>"
+                "    <td>" + "$%0.2f" % order_item.total + "</td>"
+                "  </tr>")
+        logging.debug(table)
+        return table
+
+    def html_table_autoship(self):
+        """ Returns order as a collection of HTML rows """
+        table = ""
+        for order_item in self.order_items:
+            table += (
+                "  <tr>"
+                "    <td>" + order_item.sku + "</td>"
+                "    <td>" + order_item.description + "</td>"
+                "    <td>" + str(order_item.qty) + "</td>"
+                "    <td>" + "$%0.2f" % order_item.list_price + "</td>"
+                "    <td>" + "$%0.2f" % order_item.total + "</td>"
                 "  </tr>")
         logging.debug(table)
         return table
@@ -250,8 +302,8 @@ class OrderItem(object):
              "    <td>" + self.sku + "</td>"
              "    <td>" + self.description + "</td>"
              "    <td>" + str(self.qty) + "</td>"
-             "    <td>" + "%0.2f" % self.list_price + "</td>"
-             "    <td>" + str(self.total) + "</td>"
+             "    <td>" + "$%0.2f" % self.order_item.list_price + "</td>"
+             "    <td>" + "$%0.2f" % self.order_item.total + "</td>"
              "  </tr>")
         logging.debug(s)
         return s
