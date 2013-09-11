@@ -1,7 +1,6 @@
 USE [Mom-Nutri-Health]
 GO
 
-/****** Object:  StoredProcedure [dbo].[Emailer_GetNewOrders]    Script Date: 09/10/2013 13:16:08 ******/
 SET ANSI_NULLS ON
 GO
 
@@ -11,10 +10,10 @@ GO
 -- =============================================
 -- Author:		Mark Richman
 -- Create date: 9/10/2013
--- Description:	Order Confirmation
--- Example:     exec Emailer_GetNewOrders
+-- Description:	EmailVision Order Confirmation
+-- Example:     exec EmailVision_GetNewOrders
 -- =============================================
-CREATE PROCEDURE [dbo].[Emailer_GetNewOrders]
+CREATE PROCEDURE [dbo].[EmailVision_GetNewOrders]
 	-- Add the parameters for the stored procedure here
 
 AS
@@ -32,13 +31,13 @@ FROM CMS (NOLOCK)
 	INNER JOIN CUST (NOLOCK) ON CMS.CUSTNUM = CUST.CUSTNUM
 	INNER JOIN (SELECT DISTINCT NUMBER, DESC1, DESC2
 		FROM STOCK (NOLOCK)) AS ItemInfo ON ITEMS.ITEM = ItemInfo.NUMBER
-WHERE (CUST.NOEMAIL = 0)
+WHERE 1=1 -- CUST.NOEMAIL = 0
 	AND (CMS.ODR_DATE BETWEEN DATEADD(d, -2, GETDATE()) AND GETDATE())
 	AND (ITEMS.IT_UNCOST > 0)
 	AND ((ITEMS.NONPRODUCT = 0) OR (ITEMS.IT_UNLIST <> 0))
 	AND (CUST.EMAIL <> '')
 	AND NOT (CMS.ORDERNO IN (SELECT LAST_ORDER FROM CLUBSUBS (NOLOCK)))
-	AND (PROCSSD = 0)
+	-- AND (PROCSSD = 0)
 	AND NOT (CUST.EMAIL LIKE '%amazon.com')
 	--AND
 	--  ((SELECT     COUNT(CUSTNUM) AS Expr1
@@ -55,4 +54,5 @@ WHERE (CUST.NOEMAIL = 0)
 END
 
 GO
+
 
