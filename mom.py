@@ -8,7 +8,6 @@ MOM SQL Client
 from ConfigParser import SafeConfigParser, Error
 from datetime import date
 import logging
-import json
 from pymssql import connect, InterfaceError
 
 
@@ -78,7 +77,7 @@ class MOMClient(object):
                 order_item.description = order_line.description
                 order_item.qty = order_line.qty
                 order_item.list_price = order_line.list_price
-                order_item.total = order_line.list_price * order.qty
+                order_item.total = order_line.list_price * order_line.qty
                 orders.order_items.append(order_item)
                 logging.info("Order %s\tItem %s" %
                             (order_line.order_num, order_item.sku))
@@ -89,7 +88,6 @@ class MOMClient(object):
                           len(order.order_items),
                           order.order_items))
             orders_list.append(order)
-            logging.info(order.html_table())
 
         return orders_list
 
@@ -285,8 +283,8 @@ class OrderItem(object):
             self.sku = row['ITEM']
             self.description = row['DESC1']
             self.list_price = row['IT_UNLIST']
-            self.unit_price = ''
-            self.ext_price = ''
+            self.unit_price = row['IT_UNLIST']
+            self.ext_price = row['IT_UNLIST']
             self.qty = row['QUANTO']
             self.tax = row['TAX']
             self.shipping = row['SHIPPING']
@@ -294,7 +292,7 @@ class OrderItem(object):
             self.tracking_num = ''
             self.tracking_url = ''
             self.source_key = row['SourceKey']
-            self.total = 0.00
+            self.total = self.qty * self.list_price
 
     def html_row(self):
         """ Returns order item as an HTML row """
