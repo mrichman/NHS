@@ -55,7 +55,7 @@ class MOMClient(object):
         try:
             conn = self.get_mom_connection()
             cur = conn.cursor()
-            cur.callproc("Emailer_GetNewOrders")
+            cur.callproc("EmailVision_GetNewOrders")
             for row in cur:
                 logging.debug("CUSTNUM=%d, FIRSTNAME=%s" % (
                     row['CUSTNUM'], row['FIRSTNAME']))
