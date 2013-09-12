@@ -27,7 +27,7 @@ class PinnacleClient(object):
         try:
             self.pcapi_username = config.get("pcapi", "username")
             self.pcapi_password = config.get("pcapi", "password")
-            self.pcapi_token = config.get("pcapi", "password")
+            self.pcapi_token = config.get("pcapi", "token")
         except Error:
             msg = "Config section [pcapi] bad or missing"
             logging.error(msg)
@@ -40,14 +40,14 @@ class PinnacleClient(object):
             'password': self.pcapi_password,
             'token': self.pcapi_token,
             'apiType': 'json',
-            'call': 'GetProducts',
-            'PrimaryCategory': -1}
+            'call': 'GetOrders',
+            'Status': 'Abandon'}
 
-        req = requests.get(API_URL, params=payload)
+        res = requests.get(API_URL, params=payload)
 
         # print r.status_code
         # print r.text
-        data = json.loads(req.text, encoding='ascii')
+        data = json.loads(res.text, encoding='ascii')
         return data
 
 if __name__ == '__main__':
