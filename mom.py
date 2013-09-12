@@ -12,6 +12,7 @@ from pymssql import connect, InterfaceError
 
 
 class MOMClient(object):
+    """ MOM SQL Client """
 
     CC_TYPES = {'MC': 'MasterCard',
                 'VI': 'Visa',
@@ -19,9 +20,8 @@ class MOMClient(object):
                 'AM': 'American Express',
                 'DU': 'Manual'}
 
-    """ MOM SQL Client """
     def __init__(self):
-        pass
+        self.conn = None
 
     def get_mom_connection(self):
         """ Gets SQL Server connection to MOM """
@@ -40,10 +40,11 @@ class MOMClient(object):
 
         try:
             logging.info('Connecting to MOM...')
-            conn = connect(host=momdb_host, user=momdb_user,
-                           password=momdb_password,
-                           database=momdb_db, as_dict=True)
-            return conn
+            if self.conn is None:
+                self.conn = connect(host=momdb_host, user=momdb_user,
+                               password=momdb_password,
+                               database=momdb_db, as_dict=True)
+            return self.conn
         except InterfaceError as error:
             msg = "Error connecting to SQL Server: %s" % error.message
             logging.error(msg)
@@ -56,7 +57,6 @@ class MOMClient(object):
         """
         Get new orders from MOM by calling sproc "Emailer_GetNewOrders"
         """
-        orders_list = []
         orders_dict = {}
         try:
             conn = self.get_mom_connection()
@@ -70,38 +70,17 @@ class MOMClient(object):
                     orders_dict[order].append(order)
                 else:
                     orders_dict[order] = [order]
-            conn.close()
+            # conn.close()
         except Error as error:
             logging.error(error.message)
             raise
 
-        # normalize orders into Order->OrderItems
-        for orders in orders_dict:
-            # some orders have >1 "order" (line item)
-            for order_line in orders_dict[orders]:
-                order_item = OrderItem()
-                order_item.sku = order_line.sku
-                order_item.description = order_line.description
-                order_item.discount = order_line.discount
-                order_item.qty = order_line.qty
-                order_item.list_price = order_line.list_price
-                order_item.total = order_line.list_price * order_line.qty
-                orders.order_items.append(order_item)
-                logging.info("Order %s\tItem %s" %
-                            (order_line.order_num, order_item.sku))
-
-        for order in orders_dict:
-            logging.info("Order %s has %d line items: %s" %
-                         (order.order_num,
-                          len(order.order_items),
-                          order.order_items))
-            orders_list.append(order)
+        orders_list = self.normalize_orders_dict(orders_dict)
 
         return orders_list
 
     def get_upcoming_autoship_orders(self):
         """ Gets upcoming Autoship orders for prenotice email """
-        orders_list = []
         orders_dict = {}
         try:
             conn = self.get_mom_connection()
@@ -115,12 +94,56 @@ class MOMClient(object):
                     orders_dict[order].append(order)
                 else:
                     orders_dict[order] = [order]
-            conn.close()
+            # conn.close()
         except Error as error:
             logging.error(error.message)
             raise
 
-        # normalize orders into Order->OrderItems
+        orders_list = self.normalize_orders_dict(orders_dict)
+
+        return orders_list
+
+    def get_backorders(self):
+        """ Gets backorders for notice email """
+        orders_dict = {}
+        try:
+            conn = self.get_mom_connection()
+            cur = conn.cursor()
+            cur.callproc("EmailVision_GetBackOrders")
+            for row in cur:
+                order = Order(row)
+                if order in orders_dict:
+                    orders_dict[order].append(order)
+                else:
+                    orders_dict[order] = [order]
+        except Error as error:
+            logging.error(error.message)
+            raise
+        orders_list = self.normalize_orders_dict(orders_dict)
+        return orders_list
+
+    def get_shipped_orders(self):
+        """ Gets shipped orders for notice email """
+        orders_dict = {}
+        try:
+            conn = self.get_mom_connection()
+            cur = conn.cursor()
+            cur.callproc("EmailVision_GetShipped")
+            for row in cur:
+                order = Order(row)
+                if order in orders_dict:
+                    orders_dict[order].append(order)
+                else:
+                    orders_dict[order] = [order]
+        except Error as error:
+            logging.error(error.message)
+            raise
+        orders_list = self.normalize_orders_dict(orders_dict)
+        return orders_list
+
+    def normalize_orders_dict(self, orders_dict):
+        """ normalize orders into Order->OrderItems """
+        orders_list = []
         for orders in orders_dict:
             # some orders have >1 "order" (line item)
             for order_line in orders_dict[orders]:
@@ -141,16 +164,7 @@ class MOMClient(object):
                           len(order.order_items),
                           order.order_items))
             orders_list.append(order)
-
         return orders_list
-
-    def get_backorders(self):
-        """ Gets backorders for notice email """
-        # TODO get_backorders
-        orders = []
-        order = Order()
-        orders.append(order)
-        return orders
 
 
 class Order(object):
@@ -195,40 +209,41 @@ class Order(object):
             self.order_items = []
         else:
             self.order_num = int(row['ORDERNO'])
-            self.cust_num = row['CUSTNUM']
+            self.cust_num = row.get('CUSTNUM', '')
             self.first_name = row['FIRSTNAME']
-            self.last_name = row['LASTNAME']
+            self.last_name = row.get('LASTNAME', '')
             self.email = row['EMAIL']
-            self.expect_ship = row['NEXT_SHIP']
-            self.billing_address1 = row['ADDR']
-            self.billing_address2 = row['ADDR2']
-            self.billing_city = row['CITY']
-            self.billing_state = row['STATE']
-            self.billing_zip = row['ZIPCODE']
-            self.discount = row['DISCOUNT']
-            self.payment_type = MOMClient.CC_TYPES.get(row['CARDTYPE'], 'Other')
+            self.expect_ship = row.get('SHIP_DATE', date.max)
+            self.billing_address1 = row.get('ADDR', '')
+            self.billing_address2 = row.get('ADDR2', '')
+            self.billing_city = row.get('CITY', '')
+            self.billing_state = row.get('STATE', '')
+            self.billing_zip = row.get('ZIPCODE', '')
+            self.discount = row.get('DISCOUNT', 0.00)
+            self.payment_type = \
+                MOMClient.CC_TYPES.get(row.get('CARDTYPE', ''), 'Other')
             self.payment_last4 = ''
-            self.sku = row['ITEM']
-            self.description = row['DESC1']
+            self.sku = row.get('ITEM', '')
+            self.description = row.get('DESC1', '')
             self.list_price = row.get('IT_UNLIST', 0)
             self.unit_price = ''
             self.ext_price = ''
-            self.order_date = row['ODR_DATE']
-            self.qty = row['QUANTO']
+            self.order_date = row.get('ODR_DATE', date.min)
+            self.qty = row.get('QUANTO', 0)
             self.tax = row.get('TAX', 0)
             self.shipping_fee = row.get('SHIPPING', 0)
             self.subtotal = row.get('ORD_TOTAL', 0)
             self.total = row.get('ORD_TOTAL', 0)
             self.promocode_discount = 0.00
-            self.shipping_address1 = row['ADDR']
-            self.shipping_address2 = row['ADDR2']
-            self.shipping_city = row['CITY']
-            self.shipping_state = row['STATE']
-            self.shipping_zip = row['ZIPCODE']
+            self.shipping_address1 = row.get('ADDR', '')
+            self.shipping_address2 = row.get('ADDR2', '')
+            self.shipping_city = row.get('CITY', '')
+            self.shipping_state = row.get('STATE', '')
+            self.shipping_zip = row.get('ZIPCODE', '')
             self.ship_type = ''
-            self.tracking_num = ''
+            self.tracking_num = row.get('TRACKINGNO', 'Not Available')
             self.tracking_url = ''
-            self.source_key = row['SourceKey']
+            self.source_key = row.get('SourceKey', 'Not Available')
             self.order_items = []
 
     def __hash__(self):
@@ -301,7 +316,7 @@ class OrderItem(object):
             self.tax = row['TAX']
             self.shipping = row['SHIPPING']
             self.ship_type = ''
-            self.tracking_num = ''
+            self.tracking_num = row.get('TRACKINGNO', 'Not Available')
             self.tracking_url = ''
             self.source_key = row['SourceKey']
             self.total = self.qty * self.list_price
