@@ -12,6 +12,13 @@ from pymssql import connect, InterfaceError
 
 
 class MOMClient(object):
+
+    CC_TYPES = {'MC': 'MasterCard',
+                'VI': 'Visa',
+                'DI': 'Discover',
+                'AM': 'American Express',
+                'DU': 'Manual'}
+
     """ MOM SQL Client """
     def __init__(self):
         pass
@@ -75,6 +82,7 @@ class MOMClient(object):
                 order_item = OrderItem()
                 order_item.sku = order_line.sku
                 order_item.description = order_line.description
+                order_item.discount = order_line.discount
                 order_item.qty = order_line.qty
                 order_item.list_price = order_line.list_price
                 order_item.total = order_line.list_price * order_line.qty
@@ -93,7 +101,7 @@ class MOMClient(object):
 
     def get_upcoming_autoship_orders(self):
         """ Gets upcoming Autoship orders for prenotice email """
-        orders = []
+        orders_list = []
         orders_dict = {}
         try:
             conn = self.get_mom_connection()
@@ -115,24 +123,26 @@ class MOMClient(object):
         # normalize orders into Order->OrderItems
         for orders in orders_dict:
             # some orders have >1 "order" (line item)
-            for order in orders_dict[orders]:
+            for order_line in orders_dict[orders]:
                 order_item = OrderItem()
-                order_item.sku = order.sku
-                order_item.description = order.description
-                order_item.qty = order.qty
-                order_item.list_price = order.list_price
-                order_item.total = order.total
+                order_item.sku = order_line.sku
+                order_item.description = order_line.description
+                order_item.discount = order_line.discount
+                order_item.qty = order_line.qty
+                order_item.list_price = order_line.list_price
+                order_item.total = order_line.list_price * order_line.qty
                 orders.order_items.append(order_item)
-                logging.debug("Order %s\tItem %s" % (order.order_num, order_item.sku))
+                logging.info("Order %s\tItem %s" %
+                            (order_line.order_num, order_item.sku))
 
         for order in orders_dict:
-            logging.info("Order %s has %d items: %s" %
+            logging.info("Order %s has %d line items: %s" %
                          (order.order_num,
                           len(order.order_items),
                           order.order_items))
-            orders.append(order)
+            orders_list.append(order)
 
-        return orders
+        return orders_list
 
     def get_backorders(self):
         """ Gets backorders for notice email """
@@ -172,7 +182,7 @@ class Order(object):
             self.shipping_fee = 0.00
             self.subtotal = 0.00
             self.total = 0.00
-            self.promocode_discount = 0.00
+            self.promocode = 0.00
             self.shipping_address1 = ''
             self.shipping_address2 = ''
             self.shipping_city = ''
@@ -195,8 +205,8 @@ class Order(object):
             self.billing_city = row['CITY']
             self.billing_state = row['STATE']
             self.billing_zip = row['ZIPCODE']
-            self.discount = 0.00
-            self.payment_type = ''
+            self.discount = row['DISCOUNT']
+            self.payment_type = MOMClient.CC_TYPES.get(row['CARDTYPE'], 'Other')
             self.payment_last4 = ''
             self.sku = row['ITEM']
             self.description = row['DESC1']
@@ -269,6 +279,7 @@ class OrderItem(object):
             self.list_price = ''
             self.unit_price = ''
             self.ext_price = ''
+            self.discount = 0.00
             self.qty = 0
             self.tax = 0.00
             self.shipping = 0.00
@@ -282,6 +293,7 @@ class OrderItem(object):
             self.expect_ship = row['NEXT_SHIP']
             self.sku = row['ITEM']
             self.description = row['DESC1']
+            self.discount = row['DISCOUNT']
             self.list_price = row['IT_UNLIST']
             self.unit_price = row['IT_UNLIST']
             self.ext_price = row['IT_UNLIST']
@@ -296,15 +308,15 @@ class OrderItem(object):
 
     def html_row(self):
         """ Returns order item as an HTML row """
-        s = ("  <tr>"
-             "    <td>" + self.sku + "</td>"
-             "    <td>" + self.description + "</td>"
-             "    <td>" + str(self.qty) + "</td>"
-             "    <td>" + "$%0.2f" % self.order_item.list_price + "</td>"
-             "    <td>" + "$%0.2f" % self.order_item.total + "</td>"
-             "  </tr>")
-        logging.debug(s)
-        return s
+        row = ("  <tr>"
+               "    <td>" + self.sku + "</td>"
+               "    <td>" + self.description + "</td>"
+               "    <td>" + str(self.qty) + "</td>"
+               "    <td>" + "$%0.2f" % self.list_price + "</td>"
+               "    <td>" + "$%0.2f" % self.total + "</td>"
+               "  </tr>")
+        logging.debug(row)
+        return row
 
 if __name__ == '__main__':
     pass
