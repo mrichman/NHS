@@ -177,17 +177,29 @@ def test_email():
 
 def ship_confirmation():
     """ Ship Confirmation Email """
-    req = EmailVisionClient().create_request("Trigger_OrderShipment1")
-    req.email = 'mark.richman@nutrihealth.com'
-    config = SafeConfigParser()
-    config.read('config.ini')
-    req.encrypt = config.get("emailvision", "ship_conf_key")
-    if not was_mail_sent(req.email, req.notificationId):
-        res = EmailVisionClient().send(req)
-        logging.debug(res)
-        record_sent_mail(req.email, req.notificationId)
-    else:
-        logging.debug("Mail already sent. Skipping.")
+    orders = MOMClient().get_shipped_orders()
+    logging.info("Got %d shipped orders from MOM." % len(orders))
+    for order in orders:
+        req = EmailVisionClient().create_request("Trigger_OrderShipment1")
+        req.dyn = [
+            {
+                'entry': [
+                    {"key": "firstname", "value": order.first_name},
+                    {"key": "tracking_num", "value": order.tracking_num}
+                ]
+            }
+        ]
+        # TODO set req.email = customer's email
+        req.email = 'mark.richman@nutrihealth.com'
+        config = SafeConfigParser()
+        config.read('config.ini')
+        req.encrypt = config.get("emailvision", "ship_conf_key")
+        if not was_mail_sent(req.email, req.notificationId):
+            res = EmailVisionClient().send(req)
+            logging.debug(res)
+            record_sent_mail(req.email, req.notificationId)
+        else:
+            logging.debug("Mail already sent. Skipping.")
 
 
 def order_conf():
@@ -335,7 +347,6 @@ def autoship_prenotice():
         req.email = 'mark.richman@nutrihealth.com'
         config = SafeConfigParser()
         config.read('config.ini')
-        req.email = 'mark.richman@nutrihealth.com'
         req.encrypt = config.get("emailvision", "as_prenotice_key")
         if not was_mail_sent(req.email, req.notificationId, order.order_num):
             res = EmailVisionClient().send(req)
@@ -348,18 +359,60 @@ def autoship_prenotice():
 def backorder_notice():
     """ Backorder Notice Email """
     orders = MOMClient().get_backorders()
-    # TODO iterate through orders and generate emails
-    config = SafeConfigParser()
-    config.read('config.ini')
-    req = EmailVisionClient().create_request("Backorder-Notice")
-    req.email = 'mark.richman@nutrihealth.com'
-    req.encrypt = config.get("emailvision", "backorder_notice_key")
-    if not was_mail_sent(req.email, req.notificationId):
-        res = EmailVisionClient().send(req)
-        logging.debug(res)
-        record_sent_mail(req.email, req.notificationId)
-    else:
-        logging.debug("Mail already sent. Skipping.")
+    logging.info("Got %d backorders from MOM." % len(orders))
+    for order in orders:
+        req = EmailVisionClient().create_request("Backorder-Notice")
+        req.dyn = [
+            {
+                'entry': [
+                    {"key": "billing_address1",
+                     "value": order.billing_address1},
+                    {"key": "billing_address2",
+                     "value": order.billing_address2},
+                    {"key": "billing_city", "value": order.billing_city},
+                    {"key": "billing_state", "value": order.billing_state},
+                    {"key": "billing_zip", "value": order.billing_zip},
+                    {"key": "discount", "value": order.discount},
+                    {"key": "firstname", "value": order.first_name},
+                    {"key": "last4", "value": order.payment_last4},
+                    {"key": "lastname", "value": order.last_name},
+                    {"key": "ordernum", "value": order.order_num},
+                    {"key": "payment", "value": order.payment_type},
+                    {"key": "promocode_discount",
+                     "value": order.promocode_discount},
+                    {"key": "shipping_address1",
+                     "value": order.shipping_address1},
+                    {"key": "shipping_address2",
+                     "value": order.shipping_address2},
+                    {"key": "shipping_city", "value": order.shipping_city},
+                    {"key": "shipping_fee", "value": order.shipping_fee},
+                    {"key": "shipping_state", "value": order.shipping_state},
+                    {"key": "shipping_zip", "value": order.shipping_zip},
+                    {"key": "sourcekey", "value": order.source_key},
+                    {"key": "subtotal_amt", "value": order.subtotal},
+                    {"key": "tax_amount", "value": order.tax},
+                    {"key": "total", "value": order.total}
+                ]
+            }
+        ]
+        req.content = [
+            {
+                'entry': [
+                    {'key': 1, 'value': order.html_table()}
+                ]
+            }
+        ]
+        # TODO set req.email = customer's email
+        req.email = 'mark.richman@nutrihealth.com'
+        config = SafeConfigParser()
+        config.read('config.ini')
+        req.encrypt = config.get("emailvision", "backorder_notice_key")
+        if not was_mail_sent(req.email, req.notificationId):
+            res = EmailVisionClient().send(req)
+            logging.debug(res)
+            record_sent_mail(req.email, req.notificationId)
+        else:
+            logging.debug("Mail already sent. Skipping.")
 
 
 def setup_sqlite():
