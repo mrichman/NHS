@@ -1,4 +1,6 @@
+oursql
 pymssql
+python-wordpress-xmlrpc
 requests
-xlsxwriter
 suds
+xlsxwriter
