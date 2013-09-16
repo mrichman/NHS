@@ -63,7 +63,7 @@ class PinnacleDBClient(object):
             logging.error(msg)
             raise Exception(msg)
         try:
-            self.username = config.get("webdb", "username")
+            self.username = config.get("webdb", "user")
             self.password = config.get("webdb", "password")
             self.host = config.get("webdb", "host")
             self.db = config.get("webdb", "db")
@@ -72,27 +72,43 @@ class PinnacleDBClient(object):
             logging.error(msg)
             raise Exception(msg)
 
-    def get_abandoned_carts(self):
+    def get_abandoned_carts(self, minutes):
         """ Get List of Abandoned Carts """
+        logging.info("Getting abandoned carts %d minutes old." % minutes)
         conn = oursql.connect(host=self.host, user=self.username,
                               passwd=self.password, db=self.db)
         curs = conn.cursor(oursql.DictCursor)
-        curs.execute((
-            "SELECT users.email, orders.create_date "
+        sql = (
+            "SELECT users.email, users.fname "
             "FROM orders "
             "inner join users on (users.uid = orders.uid) "
             "where orders.status = 'Abandon' "
             "and users.email <> '' "
-            "order by create_date desc"))
+            "and create_date < (NOW() - INTERVAL " + str(minutes) + " MINUTE) "
+            "order by create_date desc")
+        logging.debug(sql)
+        curs.execute(sql)
 
-        while 1:
-            row = curs.fetchone()
-            if row is None:
-                break
-            print "%s" % (row['email'])
+        carts = []
+
+        rows = curs.fetchall()
+        for row in rows:
+            cart = (row['email'], row['fname'])
+            logging.debug(cart)
+            carts.append(cart)
+
+        logging.info("Found %d abandoned carts." % len(carts))
+        return carts
 
 
 if __name__ == '__main__':
+    logging.basicConfig(level=logging.DEBUG)
+    logging.getLogger().setLevel(logging.DEBUG)
+    # console handler with specified log level
+    console_handler = logging.StreamHandler()
+    console_handler.setLevel(logging.DEBUG)
+    logging.getLogger().addHandler(console_handler)
     pc = PinnacleDBClient()
-    carts = pc.get_abandoned_carts()
+    # carts = pc.get_abandoned_carts(24 * 60)  # 24h
+    carts = pc.get_abandoned_carts(20)
     print carts
