@@ -24,7 +24,7 @@ import sqlite3
 from ConfigParser import SafeConfigParser
 from emailvision import EmailVisionClient
 from mom import MOMClient, Order
-from pinnacle import PinnacleClient
+from pinnacle import PinnacleClient, PinnacleDBClient
 
 LOGGING_LEVELS = {'critical': logging.CRITICAL,
                   'error': logging.ERROR,
@@ -33,7 +33,7 @@ LOGGING_LEVELS = {'critical': logging.CRITICAL,
                   'debug': logging.DEBUG}
 
 MAILINGS = ['order-conf', 'ship-conf', 'as-prenotice', 'backorder', 'blog-sub',
-            'blog-unsub', 'cust-survey', 'cart-abandon-20m',
+            'blog-unsub', 'cust-survey', 'cart-abandon-20min',
             'cart-abandon-24h', 'test-email']
 
 
@@ -83,7 +83,7 @@ def main():
         ship_confirmation()
     elif args.m == 'as-prenotice':
         autoship_prenotice()
-    elif args.m == 'cart-abandon-20m':
+    elif args.m == 'cart-abandon-20min':
         cart_abandon_20m()
     elif args.m == 'cart-abandon-24h':
         cart_abandon_24h()
@@ -263,36 +263,54 @@ def order_conf():
 
 def cart_abandon_20m():
     """ Cart Abandonment Email """
-    client = PinnacleClient()
-    carts = client.get_abandoned_carts()
+    client = PinnacleDBClient()
+    carts = client.get_abandoned_carts(20)
     config = SafeConfigParser()
     config.read('config.ini')
-    req = EmailVisionClient().create_request("TEST-Drift-Trigger1")
-    req.email = 'mark.richman@nutrihealth.com'
-    req.encrypt = config.get("emailvision", "cart_abandon_key")
-    if not was_mail_sent(req.email, req.notificationId):
-        res = EmailVisionClient().send(req)
-        logging.debug(res)
-        record_sent_mail(req.email, req.notificationId)
-    else:
-        logging.debug("Mail already sent. Skipping.")
+    for cart in carts:
+        req = EmailVisionClient().create_request("CartAbandoned_Drift-20min")
+        # req.email = cart[0]
+        req.email = 'mark.richman@nutrihealth.com'
+        req.dyn = [
+            {
+                'entry': [
+                    {"key": "firstname", "value": cart[1]}
+                ]
+            }
+        ]
+        req.encrypt = config.get("emailvision", "cart_abandon_20min_key")
+        if not was_mail_sent(req.email, req.notificationId):
+            res = EmailVisionClient().send(req)
+            logging.debug(res)
+            record_sent_mail(req.email, req.notificationId)
+        else:
+            logging.debug("Mail already sent. Skipping.")
 
 
 def cart_abandon_24h():
     """ Cart Abandonment Email """
-    client = PinnacleClient()
-    carts = client.get_abandoned_carts()
+    client = PinnacleDBClient()
+    carts = client.get_abandoned_carts(24 * 20)
     config = SafeConfigParser()
     config.read('config.ini')
-    req = EmailVisionClient().create_request("TEST-Drift-Trigger1")
-    req.email = 'mark.richman@nutrihealth.com'
-    req.encrypt = config.get("emailvision", "cart_abandon_key")
-    if not was_mail_sent(req.email, req.notificationId):
-        res = EmailVisionClient().send(req)
-        logging.debug(res)
-        record_sent_mail(req.email, req.notificationId)
-    else:
-        logging.debug("Mail already sent. Skipping.")
+    for cart in carts:
+        req = EmailVisionClient().create_request("CartAbandoned_Drift-24h")
+        req.email = 'mark.richman@nutrihealth.com'
+         # req.email = cart[0]
+        req.dyn = [
+            {
+                'entry': [
+                    {"key": "firstname", "value": cart[1]}
+                ]
+            }
+        ]
+        req.encrypt = config.get("emailvision", "cart_abandon_24h_key")
+        if not was_mail_sent(req.email, req.notificationId):
+            res = EmailVisionClient().send(req)
+            logging.debug(res)
+            record_sent_mail(req.email, req.notificationId)
+        else:
+            logging.debug("Mail already sent. Skipping.")
 
 
 def autoship_prenotice():
