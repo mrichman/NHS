@@ -16,7 +16,8 @@ TEMPLATES = {
     "[EMV] Test": 15367,
     "Trigger_OrderShipment1": 1532948,
     "Trigger_OrderAckknowledge1": 1532947,
-    "TEST-Drift-Trigger1": 1531070,
+    "CartAbandoned_Drift-20min": 1537405,
+    "CartAbandoned_Drift-24h": 1531070,
     "Autoship-Prenotice": 1536856,
     "Backorder-Notice": 1536855
 }
@@ -26,7 +27,8 @@ RANDOM_TAGS = {
     "[EMV] Test": 'FA6100040001FF8C',
     "Trigger_OrderShipment1": '952110747E020009',
     "Trigger_OrderAckknowledge1": '9D1F8080000474AA',
-    "TEST-Drift-Trigger1": '608D795E7C020060',
+    "CartAbandoned_Drift-20min": '8B97E04E82020001',
+    "CartAbandoned_Drift-24h": '608D795E7C020060',
     "Autoship-Prenotice": '76FC140010000D9E',
     "Backorder-Notice": '1E78EC9828002001'
 }
