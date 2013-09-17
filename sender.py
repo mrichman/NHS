@@ -18,13 +18,15 @@ to EmailVision:
 * Shopping Cart Abandonment Email 24-hour delay
 """
 
-import argparse
-import logging
-import sqlite3
+from argparse import ArgumentParser
 from ConfigParser import SafeConfigParser
+import logging
+from sqlite3 import DatabaseError, OperationalError, connect, Error
 from emailvision import EmailVisionClient
 from mom import MOMClient, Order
-from pinnacle import PinnacleClient, PinnacleDBClient
+from pinnacle import PinnacleDBClient
+from wordpress import WordPressDBClient
+
 
 LOGGING_LEVELS = {'critical': logging.CRITICAL,
                   'error': logging.ERROR,
@@ -39,7 +41,7 @@ MAILINGS = ['order-conf', 'ship-conf', 'as-prenotice', 'backorder', 'blog-sub',
 
 def main():
     """ Main function """
-    parser = argparse.ArgumentParser(description="EmailVision Sender")
+    parser = ArgumentParser(description="EmailVision Sender")
     parser.add_argument(
         '-l',
         type=str,
@@ -89,6 +91,10 @@ def main():
         cart_abandon_24h()
     elif args.m == 'backorder':
         backorder_notice()
+    elif args.m == 'blog-sub':
+        blog_sub()
+    elif args.m == 'blog-unsub':
+        blog_unsub()
 
 
 def test_email():
@@ -433,12 +439,64 @@ def backorder_notice():
             logging.debug("Mail already sent. Skipping.")
 
 
+def blog_sub():
+    """ Blog Subscription Email """
+    client = WordPressDBClient()
+    subs = client.get_blog_subscribers()
+    config = SafeConfigParser()
+    config.read('config.ini')
+    for sub in subs:
+        req = EmailVisionClient().create_request("Blog-Sub")
+        req.email = 'mark.richman@nutrihealth.com'
+         # req.email = sub[0]
+        req.dyn = [
+            {
+                'entry': [
+                    {"key": "firstname", "value": sub[1]}
+                ]
+            }
+        ]
+        req.encrypt = config.get("emailvision", "blog_sub_key")
+        if not was_mail_sent(req.email, req.notificationId):
+            res = EmailVisionClient().send(req)
+            logging.debug(res)
+            record_sent_mail(req.email, req.notificationId)
+        else:
+            logging.debug("Mail already sent. Skipping.")
+
+
+def blog_unsub():
+    """ Blog Unsubscription Email """
+    client = WordPressClient()
+    subs = client.get_blog_unsubscribers()
+    config = SafeConfigParser()
+    config.read('config.ini')
+    for sub in subs:
+        req = EmailVisionClient().create_request("Blog-Unsub")
+        req.email = 'mark.richman@nutrihealth.com'
+         # req.email = sub[0]
+        req.dyn = [
+            {
+                'entry': [
+                    {"key": "firstname", "value": sub[1]}
+                ]
+            }
+        ]
+        req.encrypt = config.get("emailvision", "blog_unsub_key")
+        if not was_mail_sent(req.email, req.notificationId):
+            res = EmailVisionClient().send(req)
+            logging.debug(res)
+            record_sent_mail(req.email, req.notificationId)
+        else:
+            logging.debug("Mail already sent. Skipping.")
+
+
 def setup_sqlite():
     """ Create SQLite3 tracking database if it doesn't exist """
     con = None
 
     try:
-        con = sqlite3.connect('sender.db')
+        con = connect('sender.db')
         cur = con.cursor()
         logging.info("Creating table sent_mail if absent...")
 
@@ -448,10 +506,10 @@ def setup_sqlite():
 
         con.commit()
         cur.close()
-    except sqlite3.OperationalError, msg:
+    except OperationalError, msg:
         logging.error(msg)
         raise
-    except sqlite3.DatabaseError, msg:
+    except DatabaseError, msg:
         logging.error(msg)
         raise
     finally:
@@ -466,7 +524,7 @@ def record_sent_mail(email, mailing, external_id=None):
     """
     con = None
     try:
-        con = sqlite3.connect('sender.db')
+        con = connect('sender.db')
         cur = con.cursor()
         logging.info("Recording email sent to " + email)
         if external_id:
@@ -482,10 +540,10 @@ def record_sent_mail(email, mailing, external_id=None):
         logging.info("Inserted %d records. " % cur.rowcount)
         con.commit()
         cur.close()
-    except sqlite3.OperationalError, msg:
+    except OperationalError, msg:
         logging.error(msg)
         raise
-    except sqlite3.DatabaseError, msg:
+    except DatabaseError, msg:
         logging.error(msg)
         raise
     finally:
@@ -501,7 +559,7 @@ def was_mail_sent(email, mailing, external_id=None):
     con = None
 
     try:
-        con = sqlite3.connect('sender.db')
+        con = connect('sender.db')
         cur = con.cursor()
         logging.info("Looking for email %s sent to %s with id %s" %
                      (mailing, email, external_id))
@@ -523,13 +581,13 @@ def was_mail_sent(email, mailing, external_id=None):
         con.commit()
         cur.close()
         return sent_count > 0
-    except sqlite3.OperationalError, msg:
+    except OperationalError, msg:
         logging.error(msg)
         raise
-    except sqlite3.DatabaseError, msg:
+    except DatabaseError, msg:
         logging.error(msg)
         raise
-    except sqlite3.Error as error:
+    except Error as error:
         logging.error(error.message)
         raise
     finally:
