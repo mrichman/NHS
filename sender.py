@@ -21,6 +21,7 @@ to EmailVision:
 from argparse import ArgumentParser
 from ConfigParser import SafeConfigParser
 import logging
+import logging.handlers
 from sqlite3 import DatabaseError, OperationalError, connect, Error
 from emailvision import EmailVisionClient
 from mom import MOMClient, Order
@@ -70,10 +71,20 @@ def main():
                         datefmt='%Y-%m-%d %H:%M:%S')
     logging.getLogger().setLevel(logging_level)
     logging.getLogger('suds.client').setLevel(logging_level)
-    # console handler with specified log level
+
     console_handler = logging.StreamHandler()
     console_handler.setLevel(logging_level)
     logging.getLogger().addHandler(console_handler)
+
+    smtp_handler = BufferingSMTPHandler(
+        mailhost='slex.sedonalabs.local',
+        fromaddr='noreply@nutrihealth.com',
+        toaddrs=['mark.richman@nutrihealth.com'],
+        subject='[EmailVision] sender.py log',
+        capacity=100)
+    smtp_handler.mailport = 587
+    smtp_handler.setLevel(logging_level)
+    logging.getLogger().addHandler(smtp_handler)
 
     setup_sqlite()
 
@@ -224,14 +235,14 @@ def order_conf():
                     {"key": "billing_city", "value": order.billing_city},
                     {"key": "billing_state", "value": order.billing_state},
                     {"key": "billing_zip", "value": order.billing_zip},
-                    {"key": "discount", "value": order.discount},
+                    {"key": "discount", "value": "%0.2f" % order.discount},
                     {"key": "firstname", "value": order.first_name},
                     {"key": "last4", "value": order.payment_last4},
                     {"key": "lastname", "value": order.last_name},
                     {"key": "ordernum", "value": order.order_num},
                     {"key": "payment", "value": order.payment_type},
                     {"key": "promocode_discount",
-                     "value": order.promocode_discount},
+                     "value": "%0.2f" % order.promocode_discount},
                     {"key": "shipping_address1",
                      "value": order.shipping_address1},
                     {"key": "shipping_address2",
@@ -467,7 +478,7 @@ def blog_sub():
 
 def blog_unsub():
     """ Blog Unsubscription Email """
-    client = WordPressClient()
+    client = WordPressDBClient()
     subs = client.get_blog_unsubscribers()
     config = SafeConfigParser()
     config.read('config.ini')
@@ -592,6 +603,42 @@ def was_mail_sent(email, mailing, external_id=None):
         raise
     finally:
         con.close()
+
+
+class BufferingSMTPHandler(logging.handlers.BufferingHandler):
+    """ Buffering SMTP Logging Handler """
+    def __init__(self, mailhost, fromaddr, toaddrs, subject, capacity):
+        logging.handlers.BufferingHandler.__init__(self, capacity)
+        self.mailhost = mailhost
+        self.mailport = None
+        self.fromaddr = fromaddr
+        self.toaddrs = toaddrs
+        self.subject = subject
+        self.setFormatter(
+            logging.Formatter("%(asctime)s %(levelname)-5s %(message)s"))
+
+    def flush(self):
+        if len(self.buffer) > 0:
+            try:
+                import smtplib
+                import string
+                port = self.mailport
+                if not port:
+                    port = smtplib.SMTP_PORT
+                smtp = smtplib.SMTP(self.mailhost, port)
+                msg = "From: %s\r\nTo: %s\r\nSubject: %s\r\n\r\n" % \
+                      (self.fromaddr, string.join(self.toaddrs, ","),
+                       self.subject)
+                for record in self.buffer:
+                    s = self.format(record)
+                    print s
+                    msg = msg + s + "\r\n"
+                smtp.sendmail(self.fromaddr, self.toaddrs, msg)
+                smtp.quit()
+            except:
+                self.handleError(None)  # no particular record
+            self.buffer = []
+
 
 if __name__ == '__main__':
     main()
