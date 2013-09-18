@@ -97,6 +97,9 @@ class WordPressDBClient(object):
         logging.info("Found %d blog subscribers." % len(users))
         return users
 
+    def get_blog_unubscribers(self):
+        pass
+
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
     logging.getLogger().setLevel(logging.DEBUG)
