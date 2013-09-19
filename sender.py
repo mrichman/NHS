@@ -206,8 +206,7 @@ def ship_confirmation():
                 ]
             }
         ]
-        # TODO set req.email = customer's email
-        req.email = 'mark.richman@nutrihealth.com'
+        req.email = order.email
         config = SafeConfigParser()
         config.read('config.ini')
         req.encrypt = config.get("emailvision", "ship_conf_key")
@@ -265,8 +264,7 @@ def order_conf():
                 ]
             }
         ]
-        # TODO set req.email = customer's email
-        req.email = 'mark.richman@nutrihealth.com'
+        req.email = order.email
         config = SafeConfigParser()
         config.read('config.ini')
         req.encrypt = config.get("emailvision", "order_conf_key")
@@ -286,8 +284,7 @@ def cart_abandon_20m():
     config.read('config.ini')
     for cart in carts:
         req = EmailVisionClient().create_request("CartAbandoned_Drift-20min")
-        # req.email = cart[0]
-        req.email = 'mark.richman@nutrihealth.com'
+        req.email = cart[0]
         req.dyn = [
             {
                 'entry': [
@@ -312,8 +309,7 @@ def cart_abandon_24h():
     config.read('config.ini')
     for cart in carts:
         req = EmailVisionClient().create_request("CartAbandoned_Drift-24h")
-        req.email = 'mark.richman@nutrihealth.com'
-         # req.email = cart[0]
+        req.email = cart[0]
         req.dyn = [
             {
                 'entry': [
@@ -378,8 +374,7 @@ def autoship_prenotice():
                 ]
             }
         ]
-        # TODO set req.email = customer's email
-        req.email = 'mark.richman@nutrihealth.com'
+        req.email = order.email
         config = SafeConfigParser()
         config.read('config.ini')
         req.encrypt = config.get("emailvision", "as_prenotice_key")
@@ -437,8 +432,7 @@ def backorder_notice():
                 ]
             }
         ]
-        # TODO set req.email = customer's email
-        req.email = 'mark.richman@nutrihealth.com'
+        req.email = order.email
         config = SafeConfigParser()
         config.read('config.ini')
         req.encrypt = config.get("emailvision", "backorder_notice_key")
@@ -458,8 +452,7 @@ def blog_sub():
     config.read('config.ini')
     for sub in subs:
         req = EmailVisionClient().create_request("Blog-Sub")
-        req.email = 'mark.richman@nutrihealth.com'
-         # req.email = sub[0]
+        req.email = sub[0]
         req.dyn = [
             {
                 'entry': [
@@ -484,8 +477,7 @@ def blog_unsub():
     config.read('config.ini')
     for sub in subs:
         req = EmailVisionClient().create_request("Blog-Unsub")
-        req.email = 'mark.richman@nutrihealth.com'
-         # req.email = sub[0]
+        req.email = sub[0]
         req.dyn = [
             {
                 'entry': [
