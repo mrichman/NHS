@@ -55,6 +55,10 @@ config.ini
 .idea/dataSources.xml
 .idea/dataSources.ids
 .idea/sqldialects.xml
+.idea/inspectionProfiles/Project_Default.xml
+.idea/inspectionProfiles/profiles_settings.xml
 
 # SQLite
 *.db
+
+
