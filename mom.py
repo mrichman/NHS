@@ -214,6 +214,8 @@ class Order(object):
             self.last_name = row.get('LASTNAME', '')
             self.email = row['EMAIL']
             self.expect_ship = row.get('SHIP_DATE', date.max)
+            if self.expect_ship == date.max:
+                self.expect_ship = row.get('NEXT_SHIP', date.max)
             self.billing_address1 = row.get('ADDR', '')
             self.billing_address2 = row.get('ADDR2', '')
             self.billing_city = row.get('CITY', '')
