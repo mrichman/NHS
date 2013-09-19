@@ -1,10 +1,10 @@
-*/15 * * * * /home/mrichman/code/NHS/sender.py -m order-conf
-*/15 * * * * /home/mrichman/code/NHS/sender.py -m ship-conf
-0 9 * * * /home/mrichman/code/NHS/sender.py -m as-prenotice
-0 9 * * * /home/mrichman/code/NHS/sender.py -m backorder
-# */15 * * * * /home/mrichman/code/NHS/sender.py -m blog-sub
-# */15 * * * * /home/mrichman/code/NHS/sender.py -m blog-unsub
-# 0 9 * * * /home/mrichman/code/NHS/sender.py -m cust-survey
-# */15 * * * * /home/mrichman/code/NHS/sender.py -m cart-abandon-20min
-# */15 * * * * /home/mrichman/code/NHS/sender.py -m cart-abandon-24h
-# */15 * * * * /home/mrichman/code/NHS/sender.py -m test-email
+*/15 * * * * cd /home/mrichman/code/NHS/; ./sender.py -m order-conf
+*/15 * * * * cd /home/mrichman/code/NHS/; ./sender.py -m ship-conf
+0 9 * * * cd /home/mrichman/code/NHS/; ./sender.py -m as-prenotice
+0 9 * * * cd /home/mrichman/code/NHS/; ./sender.py -m backorder
+# */15 * * * * cd /home/mrichman/code/NHS/; ./sender.py -m blog-sub
+# */15 * * * * cd /home/mrichman/code/NHS/; ./sender.py -m blog-unsub
+# 0 9 * * * cd /home/mrichman/code/NHS/; ./sender.py -m cust-survey
+# */15 * * * * cd /home/mrichman/code/NHS/; ./sender.py -m cart-abandon-20min
+# */15 * * * * cd /home/mrichman/code/NHS/; ./sender.py -m cart-abandon-24h
+# */15 * * * * cd /home/mrichman/code/NHS/; ./sender.py -m test-email
