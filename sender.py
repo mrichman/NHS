@@ -88,6 +88,8 @@ def main():
 
     setup_sqlite()
 
+    logging.info(args.m)
+
     if args.m == 'order-conf':
         order_conf()
     elif args.m == 'test-email':

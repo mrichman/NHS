@@ -212,7 +212,7 @@ class Order(object):
             self.cust_num = row.get('CUSTNUM', '')
             self.first_name = row['FIRSTNAME']
             self.last_name = row.get('LASTNAME', '')
-            self.email = row['EMAIL']
+            self.email = 'mark.richman@nutrihealth.com'  # row['EMAIL']
             self.expect_ship = row.get('SHIP_DATE', date.max)
             if self.expect_ship == date.max:
                 self.expect_ship = row.get('NEXT_SHIP', date.max)
