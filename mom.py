@@ -163,6 +163,12 @@ class MOMClient(object):
                          (order.order_num,
                           len(order.order_items),
                           order.order_items))
+            order.subtotal = \
+                float(order.total) - \
+                float(order.tax) - \
+                float(order.shipping_fee) - \
+                float(order.discount) - \
+                float(order.promocode_discount)
             orders_list.append(order)
         return orders_list
 
@@ -196,7 +202,8 @@ class Order(object):
             self.shipping_fee = 0.00
             self.subtotal = 0.00
             self.total = 0.00
-            self.promocode = 0.00
+            self.promocode = ''
+            self.promocode_discount = 0.00
             self.shipping_address1 = ''
             self.shipping_address2 = ''
             self.shipping_city = ''
@@ -236,6 +243,7 @@ class Order(object):
             self.shipping_fee = row.get('SHIPPING', 0)
             self.subtotal = row.get('ORD_TOTAL', 0)
             self.total = row.get('ORD_TOTAL', 0)
+            self.promocode = 'Not Available'
             self.promocode_discount = 0.00
             self.shipping_address1 = row.get('ADDR', '')
             self.shipping_address2 = row.get('ADDR2', '')
@@ -244,8 +252,12 @@ class Order(object):
             self.shipping_zip = row.get('ZIPCODE', '')
             self.ship_type = ''
             self.tracking_num = row.get('TRACKINGNO', 'Not Available')
+            if self.tracking_num == '':
+                self.tracking_num = 'Not Available'
             self.tracking_url = ''
             self.source_key = row.get('SourceKey', 'Not Available')
+            if self.source_key == '':
+                self.source_key = 'Not Available'
             self.order_items = []
 
     def __hash__(self):
@@ -310,13 +322,13 @@ class OrderItem(object):
             self.expect_ship = row['NEXT_SHIP']
             self.sku = row['ITEM']
             self.description = row['DESC1']
-            self.discount = row['DISCOUNT']
-            self.list_price = row['IT_UNLIST']
-            self.unit_price = row['IT_UNLIST']
-            self.ext_price = row['IT_UNLIST']
-            self.qty = row['QUANTO']
-            self.tax = row['TAX']
-            self.shipping = row['SHIPPING']
+            self.discount = float(row['DISCOUNT'])
+            self.list_price = float(row['IT_UNLIST'])
+            self.unit_price = float(row['IT_UNLIST'])
+            self.ext_price = float(row['IT_UNLIST'])
+            self.qty = int(row['QUANTO'])
+            self.tax = float(row['TAX'])
+            self.shipping = float(row['SHIPPING'])
             self.ship_type = ''
             self.tracking_num = row.get('TRACKINGNO', 'Not Available')
             self.tracking_url = ''
