@@ -38,3 +38,6 @@
 # Blog Subscription – If not every 2 minutes.
 # Blog Unsubscription – If not every 2 minutes.
 # Customer Survey – Once a week on Saturday 8AM EST
+
+# Backup sender.db
+0 4 * * * cd /home/mrichman/code/NHS && sqlite3 sender.db .dump > sender.db.`date +\%F`.bak
