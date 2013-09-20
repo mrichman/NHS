@@ -20,16 +20,16 @@
 # For more information see the manual pages of crontab(5) and cron(8)
 #
 # m h  dom mon dow   command
-*/15 * * * * sender.py -m order-conf
-0 11,17 * * * sender.py -m ship-conf
-0 9 * * * sender.py -m as-prenotice
-0 9,14 * * * sender.py -m backorder
-# */2 * * * * sender.py -m blog-sub
-# */2 * * * * sender.py -m blog-unsub
-# 0 11 * * 7 sender.py -m cust-survey
-# */15 * * * * sender.py -m cart-abandon-20min
-# */15 * * * * sender.py -m cart-abandon-24h
-# */15 * * * * sender.py -m test-email
+*/15 * * * * /home/mrichman/code/NHS/sender.py -m order-conf
+0 11,17 * * * /home/mrichman/code/NHS/sender.py -m ship-conf
+0 9 * * * /home/mrichman/code/NHS/sender.py -m as-prenotice
+0 9,14 * * * /home/mrichman/code/NHS/sender.py -m backorder
+# */2 * * * * /home/mrichman/code/NHS/sender.py -m blog-sub
+# */2 * * * * /home/mrichman/code/NHS/sender.py -m blog-unsub
+# 0 11 * * 7 /home/mrichman/code/NHS/sender.py -m cust-survey
+# */15 * * * * /home/mrichman/code/NHS/sender.py -m cart-abandon-20min
+# */15 * * * * /home/mrichman/code/NHS/sender.py -m cart-abandon-24h
+# */15 * * * * /home/mrichman/code/NHS/sender.py -m test-email
 
 # Order Confirmation – every 15 mins
 # Ship Confirmation - Twice a day:  11AM AZ (covers first print), 5PM AZ  (covers 2nd print).
