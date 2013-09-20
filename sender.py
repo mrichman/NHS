@@ -83,7 +83,7 @@ def main():
         toaddrs=['mark.richman@nutrihealth.com'],
         subject='[EmailVision] sender.py log',
         capacity=1000)
-    smtp_handler.mailport = 1025
+    # smtp_handler.mailport = 1025
     smtp_handler.setLevel(logging_level)
     logging.getLogger().addHandler(smtp_handler)
 
