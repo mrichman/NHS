@@ -22,6 +22,7 @@ from argparse import ArgumentParser
 from ConfigParser import SafeConfigParser
 import logging
 import logging.handlers
+import os
 from sqlite3 import DatabaseError, OperationalError, connect, Error
 from emailvision import EmailVisionClient
 from mom import MOMClient, Order
@@ -77,12 +78,11 @@ def main():
     logging.getLogger().addHandler(console_handler)
 
     smtp_handler = BufferingSMTPHandler(
-        mailhost='slex.sedonalabs.local',
+        mailhost='localhost',
         fromaddr='noreply@nutrihealth.com',
         toaddrs=['mark.richman@nutrihealth.com'],
         subject='[EmailVision] sender.py log',
         capacity=1000)
-    smtp_handler.mailport = 587
     smtp_handler.setLevel(logging_level)
     logging.getLogger().addHandler(smtp_handler)
 
@@ -184,7 +184,7 @@ def test_email():
     ]
     req.email = 'mark.richman@nutri-health.com'
     config = SafeConfigParser()
-    config.read('config.ini')
+    config.read(os.path.join(os.path.dirname(__file__), 'config.ini'))
     req.encrypt = config.get("emailvision", "order_conf_key")
     if not was_mail_sent(req.email, req.notificationId):
         res = EmailVisionClient().send(req)
@@ -210,7 +210,7 @@ def ship_confirmation():
         ]
         req.email = order.email
         config = SafeConfigParser()
-        config.read('config.ini')
+        config.read(os.path.join(os.path.dirname(__file__), 'config.ini'))
         req.encrypt = config.get("emailvision", "ship_conf_key")
         if not was_mail_sent(req.email, req.notificationId):
             res = EmailVisionClient().send(req)
@@ -268,7 +268,7 @@ def order_conf():
         ]
         req.email = order.email
         config = SafeConfigParser()
-        config.read('config.ini')
+        config.read(os.path.join(os.path.dirname(__file__), 'config.ini'))
         req.encrypt = config.get("emailvision", "order_conf_key")
         if not was_mail_sent(req.email, req.notificationId, order.order_num):
             res = EmailVisionClient().send(req)
@@ -283,7 +283,7 @@ def cart_abandon_20m():
     client = PinnacleDBClient()
     carts = client.get_abandoned_carts(20)
     config = SafeConfigParser()
-    config.read('config.ini')
+    config.read(os.path.join(os.path.dirname(__file__), 'config.ini'))
     for cart in carts:
         req = EmailVisionClient().create_request("CartAbandoned_Drift-20min")
         req.email = cart[0]
@@ -308,7 +308,7 @@ def cart_abandon_24h():
     client = PinnacleDBClient()
     carts = client.get_abandoned_carts(24 * 20)
     config = SafeConfigParser()
-    config.read('config.ini')
+    config.read(os.path.join(os.path.dirname(__file__), 'config.ini'))
     for cart in carts:
         req = EmailVisionClient().create_request("CartAbandoned_Drift-24h")
         req.email = cart[0]
@@ -378,7 +378,7 @@ def autoship_prenotice():
         ]
         req.email = order.email
         config = SafeConfigParser()
-        config.read('config.ini')
+        config.read(os.path.join(os.path.dirname(__file__), 'config.ini'))
         req.encrypt = config.get("emailvision", "as_prenotice_key")
         if not was_mail_sent(req.email, req.notificationId, order.order_num):
             res = EmailVisionClient().send(req)
@@ -436,7 +436,7 @@ def backorder_notice():
         ]
         req.email = order.email
         config = SafeConfigParser()
-        config.read('config.ini')
+        config.read(os.path.join(os.path.dirname(__file__), 'config.ini'))
         req.encrypt = config.get("emailvision", "backorder_notice_key")
         if not was_mail_sent(req.email, req.notificationId):
             res = EmailVisionClient().send(req)
@@ -451,7 +451,7 @@ def blog_sub():
     client = WordPressDBClient()
     subs = client.get_blog_subscribers()
     config = SafeConfigParser()
-    config.read('config.ini')
+    config.read(os.path.join(os.path.dirname(__file__), 'config.ini'))
     for sub in subs:
         req = EmailVisionClient().create_request("Blog-Sub")
         req.email = sub[0]
@@ -476,7 +476,7 @@ def blog_unsub():
     client = WordPressDBClient()
     subs = client.get_blog_unsubscribers()
     config = SafeConfigParser()
-    config.read('config.ini')
+    config.read(os.path.join(os.path.dirname(__file__), 'config.ini'))
     for sub in subs:
         req = EmailVisionClient().create_request("Blog-Unsub")
         req.email = sub[0]

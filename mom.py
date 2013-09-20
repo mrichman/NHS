@@ -8,6 +8,7 @@ MOM SQL Client
 from ConfigParser import SafeConfigParser, Error
 from datetime import date
 import logging
+import os
 from pymssql import connect, InterfaceError
 
 
@@ -26,8 +27,7 @@ class MOMClient(object):
     def get_mom_connection(self):
         """ Gets SQL Server connection to MOM """
         config = SafeConfigParser()
-        config.read('config.ini')
-
+        config.read(os.path.join(os.path.dirname(__file__), 'config.ini'))
         try:
             momdb_host = config.get("momdb", "host")
             momdb_user = config.get("momdb", "user")
@@ -42,8 +42,8 @@ class MOMClient(object):
             logging.info('Connecting to MOM...')
             if self.conn is None:
                 self.conn = connect(host=momdb_host, user=momdb_user,
-                               password=momdb_password,
-                               database=momdb_db, as_dict=True)
+                                    password=momdb_password,
+                                    database=momdb_db, as_dict=True)
             return self.conn
         except InterfaceError as error:
             msg = "Error connecting to SQL Server: %s" % error.message

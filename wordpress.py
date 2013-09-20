@@ -8,6 +8,7 @@ Wordpress Client
 from ConfigParser import SafeConfigParser, Error
 import logging
 import oursql
+import os
 from wordpress_xmlrpc import Client
 from wordpress_xmlrpc.methods.users import GetUsers
 
@@ -16,8 +17,7 @@ class WordPressClient(object):
     def get_blog_subscribers(self):
         """ Gets WordPress Blog Subscribers """
         config = SafeConfigParser()
-        config.read('config.ini')
-
+        config.read(os.path.join(os.path.dirname(__file__), 'config.ini'))
         try:
             url = config.get("wordpress", "url")
             username = config.get("wordpress", "username")
@@ -48,7 +48,7 @@ class WordPressDBClient(object):
     def __init__(self):
         config = SafeConfigParser()
         try:
-            config.read("config.ini")
+            config.read(os.path.join(os.path.dirname(__file__), 'config.ini'))
         except Error:
             msg = "config.ini file bad or missing"
             logging.error(msg)
@@ -73,7 +73,8 @@ class WordPressDBClient(object):
         sql = (
             "SELECT users.user_email, users.display_name "
             "FROM admin_wpdb.wp_usermeta meta "
-            "INNER JOIN admin_wpdb.wp_users users ON (users.ID = meta.user_id) "
+            "INNER JOIN admin_wpdb.wp_users users ON "
+            "   (users.ID = meta.user_id) "
             "WHERE meta.meta_key = 'wp_capabilities' "
             "AND meta.meta_value LIKE '%subscriber%' "
             "ORDER BY users.ID")

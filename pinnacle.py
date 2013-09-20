@@ -5,11 +5,12 @@
 Pinnacle Cart API Client
 """
 
-from ConfigParser import ConfigParser, Error
+from ConfigParser import SafeConfigParser, Error
 import logging
 import requests
 import json
 import oursql
+import os
 
 API_URL = \
     'https://www.nutri-health.com/content/admin/plugins/openapi/index.php'
@@ -18,9 +19,9 @@ API_URL = \
 class PinnacleClient(object):
     """ Pinnacle API Client Class """
     def __init__(self):
-        config = ConfigParser()
+        config = SafeConfigParser()
         try:
-            config.read("config.ini")
+            config.read(os.path.join(os.path.dirname(__file__), 'config.ini'))
         except Error:
             msg = "config.ini file bad or missing"
             logging.error(msg)
@@ -55,9 +56,9 @@ class PinnacleClient(object):
 class PinnacleDBClient(object):
     """ Pinnacle DB Client Class """
     def __init__(self):
-        config = ConfigParser()
+        config = SafeConfigParser()
         try:
-            config.read("config.ini")
+            config.read(os.path.join(os.path.dirname(__file__), 'config.ini'))
         except Error:
             msg = "config.ini file bad or missing"
             logging.error(msg)
