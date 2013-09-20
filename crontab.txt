@@ -1,10 +1,40 @@
-*/15 * * * * cd /home/mrichman/code/NHS/; ./sender.py -m order-conf
-*/15 * * * * cd /home/mrichman/code/NHS/; ./sender.py -m ship-conf
-0 9 * * * cd /home/mrichman/code/NHS/; ./sender.py -m as-prenotice
-0 9 * * * cd /home/mrichman/code/NHS/; ./sender.py -m backorder
-# */15 * * * * cd /home/mrichman/code/NHS/; ./sender.py -m blog-sub
-# */15 * * * * cd /home/mrichman/code/NHS/; ./sender.py -m blog-unsub
-# 0 9 * * * cd /home/mrichman/code/NHS/; ./sender.py -m cust-survey
-# */15 * * * * cd /home/mrichman/code/NHS/; ./sender.py -m cart-abandon-20min
-# */15 * * * * cd /home/mrichman/code/NHS/; ./sender.py -m cart-abandon-24h
-# */15 * * * * cd /home/mrichman/code/NHS/; ./sender.py -m test-email
+# Edit this file to introduce tasks to be run by cron.
+#
+# Each task to run has to be defined through a single line
+# indicating with different fields when the task will be run
+# and what command to run for the task
+#
+# To define the time you can provide concrete values for
+# minute (m), hour (h), day of month (dom), month (mon),
+# and day of week (dow) or use '*' in these fields (for 'any').#
+# Notice that tasks will be started based on the cron's system
+# daemon's notion of time and timezones.
+#
+# Output of the crontab jobs (including errors) is sent through
+# email to the user the crontab file belongs to (unless redirected).
+#
+# For example, you can run a backup of all your user accounts
+# at 5 a.m every week with:
+# 0 5 * * 1 tar -zcf /var/backups/home.tgz /home/
+#
+# For more information see the manual pages of crontab(5) and cron(8)
+#
+# m h  dom mon dow   command
+*/15 * * * * sender.py -m order-conf
+0 11,17 * * * sender.py -m ship-conf
+0 9 * * * sender.py -m as-prenotice
+0 9,14 * * * sender.py -m backorder
+# */2 * * * * sender.py -m blog-sub
+# */2 * * * * sender.py -m blog-unsub
+# 0 11 * * 7 sender.py -m cust-survey
+# */15 * * * * sender.py -m cart-abandon-20min
+# */15 * * * * sender.py -m cart-abandon-24h
+# */15 * * * * sender.py -m test-email
+
+# Order Confirmation – every 15 mins
+# Ship Confirmation - Twice a day:  11AM AZ (covers first print), 5PM AZ  (covers 2nd print).
+# Autoship Prenotice – every day at 9:00am
+# Backorder Notice – Twice a day:  9AM AZ time, 2PM AZ time
+# Blog Subscription – If not every 2 minutes.
+# Blog Unsubscription – If not every 2 minutes.
+# Customer Survey – Once a week on Saturday 8AM EST
