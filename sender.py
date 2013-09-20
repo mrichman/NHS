@@ -83,6 +83,7 @@ def main():
         toaddrs=['mark.richman@nutrihealth.com'],
         subject='[EmailVision] sender.py log',
         capacity=1000)
+    smtp_handler.mailport = 1025
     smtp_handler.setLevel(logging_level)
     logging.getLogger().addHandler(smtp_handler)
 
@@ -236,14 +237,16 @@ def order_conf():
                     {"key": "billing_city", "value": order.billing_city},
                     {"key": "billing_state", "value": order.billing_state},
                     {"key": "billing_zip", "value": order.billing_zip},
-                    {"key": "discount", "value": "%0.2f" % order.discount},
+                    {"key": "discount",
+                     "value": "{0:.2f}".format(order.discount)},
                     {"key": "firstname", "value": order.first_name},
                     {"key": "last4", "value": order.payment_last4},
                     {"key": "lastname", "value": order.last_name},
                     {"key": "ordernum", "value": order.order_num},
                     {"key": "payment", "value": order.payment_type},
+                    {"key": "promocode", "value": order.promocode},
                     {"key": "promocode_discount",
-                     "value": "%0.2f" % order.promocode_discount},
+                     "value": "{0:.2f}".format(order.promocode_discount)},
                     {"key": "shipping_address1",
                      "value": order.shipping_address1},
                     {"key": "shipping_address2",
@@ -253,7 +256,8 @@ def order_conf():
                     {"key": "shipping_state", "value": order.shipping_state},
                     {"key": "shipping_zip", "value": order.shipping_zip},
                     {"key": "sourcekey", "value": order.source_key},
-                    {"key": "subtotal_amt", "value": order.subtotal},
+                    {"key": "subtotal_amt",
+                     "value": "{0:.2f}".format(order.subtotal)},
                     {"key": "tax_amount", "value": order.tax},
                     {"key": "total", "value": order.total}
                 ]
