@@ -51,7 +51,7 @@ class EmailVisionClient(object):
 
     def send(self, request):
         """ Sends SOAP Request """
-        logging.info("Sending SOAP request...")
+        logging.info("Sending SOAP request to EmailVision...")
         return self.client.service.sendObject(request)
 
 if __name__ == '__main__':
