@@ -19,7 +19,9 @@ TEMPLATES = {
     "CartAbandoned_Drift-20min": 1537405,
     "CartAbandoned_Drift-24h": 1531070,
     "Autoship-Prenotice": 1536856,
-    "Backorder-Notice": 1536855
+    "Backorder-Notice": 1536855,
+    "Blog Subscribe": 1537448,
+    "Blog Unsubscribe": 1537449
 }
 
 
@@ -30,7 +32,9 @@ RANDOM_TAGS = {
     "CartAbandoned_Drift-20min": '8B97E04E82020001',
     "CartAbandoned_Drift-24h": '608D795E7C020060',
     "Autoship-Prenotice": '76FC140010000D9E',
-    "Backorder-Notice": '1E78EC9828002001'
+    "Backorder-Notice": '1E78EC9828002001',
+    "Blog Subscribe": "40002FB46B8B5040",
+    "Blog Unsubscribe": "AF2D41010000D38A"
 }
 
 
