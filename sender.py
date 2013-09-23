@@ -568,7 +568,7 @@ def was_mail_sent(email, mailing, external_id=None):
     con = None
 
     try:
-        con = connect('sender.db')
+        con = connect(os.path.join(os.path.dirname(__file__), 'sender.db'))
         cur = con.cursor()
         logging.info("Looking for email %s sent to %s with id %s" %
                      (mailing, email, external_id))
