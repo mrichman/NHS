@@ -457,15 +457,8 @@ def blog_sub():
     config = SafeConfigParser()
     config.read(os.path.join(os.path.dirname(__file__), 'config.ini'))
     for sub in subs:
-        req = EmailVisionClient().create_request("Blog-Sub")
-        req.email = sub[0]
-        req.dyn = [
-            {
-                'entry': [
-                    {"key": "firstname", "value": sub[1]}
-                ]
-            }
-        ]
+        req = EmailVisionClient().create_request("Blog Subscribe")
+        req.email = 'mark.richman@nutrihealth.com'  # sub[0]
         req.encrypt = config.get("emailvision", "blog_sub_key")
         if not was_mail_sent(req.email, req.notificationId):
             res = EmailVisionClient().send(req)
@@ -482,15 +475,8 @@ def blog_unsub():
     config = SafeConfigParser()
     config.read(os.path.join(os.path.dirname(__file__), 'config.ini'))
     for sub in subs:
-        req = EmailVisionClient().create_request("Blog-Unsub")
+        req = EmailVisionClient().create_request("Blog Unsubscribe")
         req.email = sub[0]
-        req.dyn = [
-            {
-                'entry': [
-                    {"key": "firstname", "value": sub[1]}
-                ]
-            }
-        ]
         req.encrypt = config.get("emailvision", "blog_unsub_key")
         if not was_mail_sent(req.email, req.notificationId):
             res = EmailVisionClient().send(req)
