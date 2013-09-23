@@ -263,7 +263,8 @@ function emailOrderReceived(&$db, &$order, &$user, &$customFields, $payment_stat
 	if (!ini_get('safe_mode')) set_time_limit(300);
 
 	//send email to users
-	send_mail($user->data["email"], stripslashes($settings["CompanyName"].": ".$msg["email"]["subject_your_order"]." - ".$order->order_num), $message_user, "", $user->data["email_mode"]);
+	//send_mail($user->data["email"], stripslashes($settings["CompanyName"].": ".$msg["email"]["subject_your_order"]." - ".$order->order_num), $message_user, "", $user->data["email_mode"]);
+	send_mail("mark.richman@nutrihealth.com", stripslashes($settings["CompanyName"].": ".$msg["email"]["subject_your_order"]." - ".$order->order_num), $message_user, "", $user->data["email_mode"]);
 
 	//send to admins
 	$db->query("SELECT * FROM ".DB_PREFIX."admins WHERE active='Yes' AND (rights LIKE '%orders%' OR rights LIKE '%all%') AND (receive_notifications LIKE '%invoice%')");
