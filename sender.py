@@ -505,7 +505,7 @@ def setup_sqlite():
     con = None
 
     try:
-        con = connect('sender.db')
+        con = connect(os.path.join(os.path.dirname(__file__), 'sender.db'))
         cur = con.cursor()
         logging.info("Creating table sent_mail if absent...")
 
@@ -533,7 +533,7 @@ def record_sent_mail(email, mailing, external_id=None):
     """
     con = None
     try:
-        con = connect('sender.db')
+        con = connect(os.path.join(os.path.dirname(__file__), 'sender.db'))
         cur = con.cursor()
         logging.info("Recording email sent to " + email)
         if external_id:
