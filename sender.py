@@ -457,6 +457,9 @@ def blog_sub():
     config = SafeConfigParser()
     config.read(os.path.join(os.path.dirname(__file__), 'config.ini'))
     for sub in subs:
+        # add to local tracking db if absent
+        client.add_wp_sub_local(sub[0], sub[1])
+        # send notification email
         req = EmailVisionClient().create_request("Blog Subscribe")
         req.email = 'mark.richman@nutrihealth.com'  # sub[0]
         req.encrypt = config.get("emailvision", "blog_sub_key")
@@ -472,11 +475,15 @@ def blog_unsub():
     """ Blog Unsubscription Email """
     client = WordPressDBClient()
     subs = client.get_blog_unsubscribers()
+    if subs is None:
+        logging.info("No unsubscribers found.")
+        return
     config = SafeConfigParser()
     config.read(os.path.join(os.path.dirname(__file__), 'config.ini'))
     for sub in subs:
+        client.delete_wp_sub_local(sub[0])
         req = EmailVisionClient().create_request("Blog Unsubscribe")
-        req.email = sub[0]
+        req.email = 'mark.richman@nutrihealth.com'  # sub[0]
         req.encrypt = config.get("emailvision", "blog_unsub_key")
         if not was_mail_sent(req.email, req.notificationId):
             res = EmailVisionClient().send(req)
